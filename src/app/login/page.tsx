@@ -21,23 +21,31 @@ export default function LoginPage() {
   const handleDevLogin = async () => {
     setIsDevLoginLoading(true);
     try {
+        const email = `test_${Date.now()}@example.com`; // Unique email to avoid conflicts if needed, or just standard one
+        // Actually, let's stick to one dev user. 
+        // The error "Email address is invalid" is weird for 'test@example.com'.
+        // It might be a Supabase config issue (e.g. email provider disabled).
+        // Let's try a more real-looking email just in case.
+        const devEmail = 'habbiter_dev_user@gmail.com'; 
+        
         const { error } = await supabase.auth.signInWithPassword({
-            email: 'test@example.com',
+            email: devEmail,
             password: 'password123'
         });
         
         if (error) {
+            console.log('Login failed, trying signup:', error.message);
             // Try to sign up if login fails
             const { error: signUpError } = await supabase.auth.signUp({
-                email: 'test@example.com',
+                email: devEmail,
                 password: 'password123',
                 options: {
                     data: {
-                        first_name: 'Test',
+                        first_name: 'Dev',
                         last_name: 'User',
-                        username: 'test_user',
+                        username: 'dev_user',
                         photo_url: '',
-                        telegram_id: 123456789
+                        telegram_id: 999999999
                     }
                 }
             });
@@ -45,8 +53,13 @@ export default function LoginPage() {
             if (signUpError) {
                 alert('Ошибка входа (Dev): ' + signUpError.message);
             } else {
-                // Auto login should happen after sign up if email confirm is off, otherwise alert
-                alert('Тестовый пользователь создан! Попробуйте войти еще раз (или проверьте почту если включено подтверждение).');
+                // Check if session was created immediately (if email confirm is off)
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    router.push('/');
+                } else {
+                    alert('Тестовый пользователь создан! Если у вас включено подтверждение почты в Supabase, отключите его в Authentication -> Providers -> Email -> Confirm email.');
+                }
             }
         } else {
             router.push('/');
@@ -159,7 +172,7 @@ export default function LoginPage() {
                         {isDevLoginLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserCircle className="w-4 h-4 mr-2" />}
                         Тестовый вход (Dev)
                     </Button>
-                    <p className="text-[10px] mt-1 opacity-80">Создаст user: test@example.com / password123</p>
+                    <p className="text-[10px] mt-1 opacity-80">Создаст user: habbiter_dev_user@gmail.com</p>
                 </div>
              </div>
         )}
