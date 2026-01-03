@@ -28,8 +28,9 @@ export default function LoginPage() {
     logger.info('[LoginPage] Config', {
         botUsername: botUsername ? `${botUsername.substring(0, 3)}...` : 'MISSING',
         supabaseUrl: supabaseUrl ? 'PRESENT' : 'MISSING',
+        supabaseAnonKey: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 5)}...` : 'MISSING',
     });
-  }, [botUsername, supabaseUrl]);
+  }, [botUsername, supabaseUrl, supabaseAnonKey]);
 
   const [isMiniApp, setIsMiniApp] = useState(false);
 
