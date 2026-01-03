@@ -31,6 +31,47 @@ export default function LoginPage() {
     });
   }, [botUsername, supabaseUrl]);
 
+  useEffect(() => {
+    // Check if running in Telegram Mini App
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
+        const initData = (window as any).Telegram.WebApp.initData;
+        console.log('[LoginPage] Detected Telegram Mini App', initData);
+        if (initData) {
+            handleMiniAppAuth(initData);
+        }
+    }
+  }, []);
+
+  const handleMiniAppAuth = async (initData: string) => {
+    setIsDevLoginLoading(true);
+    try {
+        const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth-miniapp`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ initData }),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to authenticate via Mini App');
+        }
+        
+        if (data.session) {
+            const { error } = await supabase.auth.setSession(data.session);
+            if (error) throw error;
+            router.push('/');
+        }
+    } catch (e: any) {
+        console.error('Mini App Auth Error:', e);
+        // Fallback to widget if auto-login fails is usually not needed but good to keep UI visible
+    } finally {
+        setIsDevLoginLoading(false);
+    }
+  };
+
   const handleTelegramAuth = async (user: any) => {
       console.log('Telegram Auth Data:', user);
       setIsDevLoginLoading(true); // Reuse loading state or create new one
