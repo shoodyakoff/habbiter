@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getToday, getWeekDays } from '@/lib/date';
 import { HabitsHeader } from '@/features/habits/components/HabitsHeader';
@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 import confetti from 'canvas-confetti';
 import { triggerSuccessHaptic } from '@/lib/haptic';
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const selectedDateStr = searchParams.get('date') || getToday();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -148,5 +148,13 @@ export default function Home() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
