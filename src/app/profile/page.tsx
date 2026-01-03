@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { User, ShieldCheck, LogOut } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -39,10 +40,13 @@ export default function ProfilePage() {
 
       <div className="bg-card border border-border rounded-2xl p-6 shadow-sm mb-6 flex items-center gap-4">
         {user.user_metadata?.photo_url ? (
-          <img 
+          <Image 
             src={user.user_metadata.photo_url} 
             alt="Avatar" 
-            className="w-16 h-16 rounded-full"
+            width={64}
+            height={64}
+            className="rounded-full"
+            unoptimized
           />
         ) : (
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">

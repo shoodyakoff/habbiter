@@ -62,15 +62,17 @@ export default function LoginPage() {
                 if (error) throw error;
                 router.push('/');
             }
-        } catch (e: any) {
-            logger.error('Mini App Auth Error', e);
-            alert('Ошибка входа через Mini App: ' + e.message);
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+            logger.error('Mini App Auth Error', errorMessage);
+            alert('Ошибка входа через Mini App: ' + errorMessage);
         } finally {
             setIsDevLoginLoading(false);
         }
     };
 
     if (typeof window !== 'undefined') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tg = (window as any).Telegram?.WebApp;
         if (tg) {
             tg.ready();
@@ -89,7 +91,7 @@ export default function LoginPage() {
             }
         }
     }
-  }, [supabaseUrl, router, isDevLoginLoading]);
+  }, [supabaseUrl, router, isDevLoginLoading, supabaseAnonKey]);
 
   const [pollingToken, setPollingToken] = useState<string | null>(null);
 
@@ -121,9 +123,10 @@ export default function LoginPage() {
           
           const botLink = `https://t.me/${botUsername}?start=auth_${data.token}`;
           window.location.href = botLink;
-      } catch (e: any) {
-          logger.error('Error starting auth', e);
-          alert('Error starting auth: ' + e.message);
+      } catch (e: unknown) {
+          const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+          logger.error('Error starting auth', errorMessage);
+          alert('Error starting auth: ' + errorMessage);
           setIsDevLoginLoading(false);
       }
   };
@@ -159,83 +162,10 @@ export default function LoginPage() {
       return () => clearInterval(interval);
   }, [pollingToken, supabaseUrl, router]);
 
-  const handleMiniAppAuth = async (initData: string) => {
-    if (isDevLoginLoading) return;
-    
-    setIsDevLoginLoading(true);
-    try {
-        logger.info('Sending initData to backend');
-        const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth-miniapp`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ initData }),
-        });
-        
-        if (!response.ok) {
-            const text = await response.text();
-            throw new Error(`Server error ${response.status}: ${text}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.session) {
-            const { error } = await supabase.auth.setSession(data.session);
-            if (error) throw error;
-            router.push('/');
-        }
-    } catch (e: any) {
-        logger.error('Mini App Auth Error', e);
-        alert('Ошибка входа через Mini App: ' + e.message);
-    } finally {
-        setIsDevLoginLoading(false);
-    }
-  };
-
-  const handleTelegramAuth = async (user: any) => {
-      logger.info('Telegram Auth Data:', user);
-      setIsDevLoginLoading(true); // Reuse loading state or create new one
-      
-      try {
-          // Send data to backend for verification and session creation
-          const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(user),
-          });
-          
-          if (!response.ok) {
-              const text = await response.text();
-              throw new Error(`Server error ${response.status}: ${text}`);
-          }
-
-          const data = await response.json();
-          
-          if (data.session) {
-              // Set Supabase session
-              const { error } = await supabase.auth.setSession(data.session);
-              if (error) throw error;
-              
-              logger.info('Session set successfully, redirecting...');
-              router.push('/');
-          } else {
-              throw new Error('No session returned from backend');
-          }
-      } catch (e: any) {
-          logger.error('Auth Error:', e);
-          alert('Ошибка авторизации: ' + e.message);
-      } finally {
-          setIsDevLoginLoading(false);
-      }
-  };
-
   const handleDevLogin = async () => {
     setIsDevLoginLoading(true);
     try {
-        const email = `test_${Date.now()}@example.com`; // Unique email to avoid conflicts if needed, or just standard one
+        // Unique email to avoid conflicts if needed, or just standard one
         // Actually, let's stick to one dev user. 
         // The error "Email address is invalid" is weird for 'test@example.com'.
         // It might be a Supabase config issue (e.g. email provider disabled).
@@ -285,14 +215,13 @@ export default function LoginPage() {
     }
   };
 
-
-
-  const [clickCount, setClickCount] = useState(0);
+  const [, setClickCount] = useState(0);
 
   const handleLogoClick = () => {
     setClickCount(prev => {
         const newCount = prev + 1;
         if (newCount === 5) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (window as any).toggleDebug?.();
             return 0;
         }
@@ -349,7 +278,7 @@ export default function LoginPage() {
                 
                 {pollingToken && (
                     <p className="text-xs text-muted-foreground animate-pulse">
-                        Мы открыли Telegram. Нажмите "Запустить" в боте.
+                        Мы открыли Telegram. Нажмите &quot;Запустить&quot; в боте.
                     </p>
                 )}
             </div>

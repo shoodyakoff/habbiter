@@ -1,9 +1,7 @@
-// @ts-ignore
+// @ts-expect-error Deno import
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-// @ts-ignore
+// @ts-expect-error Deno import
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-// @ts-ignore
-import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -76,44 +74,9 @@ serve(async (req: Request) => {
 
     throw new Error('Invalid action')
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error:', error)
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
-
-async function verifyTelegramHash(data: any, token: string) {
-  const { hash, ...rest } = data
-  // 1. Create data-check-string
-  const items = Object.keys(rest).sort().map(key => `${key}=${rest[key]}`)
-  const dataCheckString = items.join('\n')
-  
-  // 2. Compute SHA256 of token
-  const encoder = new TextEncoder()
-  const secretKey = await crypto.subtle.digest('SHA-256', encoder.encode(token))
-  
-  // 3. Compute HMAC-SHA256 of data-check-string
-  const key = await crypto.subtle.importKey('raw', secretKey, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(dataCheckString))
-  
-  // 4. Compare hex string
-  const hexSignature = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('')
-  
-  return hexSignature === hash
-}
-
-async function checkChannelSubscription(userId: string, token: string, channelId: string) {
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/getChatMember?chat_id=${channelId}&user_id=${userId}`)
-    const data = await res.json()
-    if (!data.ok) {
-        console.error('Telegram API error:', data)
-        return false
-    }
-    const status = data.result.status
-    return ['creator', 'administrator', 'member'].includes(status)
-  } catch (e) {
-    console.error('Error checking subscription:', e)
-    return false
-  }
-}

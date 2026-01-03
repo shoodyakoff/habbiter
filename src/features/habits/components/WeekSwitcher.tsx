@@ -5,7 +5,7 @@ import {
   format, isSameDay, isFuture, isToday, 
   startOfMonth, endOfMonth, eachDayOfInterval,
   addWeeks, subWeeks, addMonths, subMonths,
-  startOfWeek, endOfWeek, isSameMonth
+  startOfWeek, endOfWeek
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { cn } from '@/lib/utils';

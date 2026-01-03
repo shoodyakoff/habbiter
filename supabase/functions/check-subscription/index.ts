@@ -1,6 +1,6 @@
-// @ts-ignore
+// @ts-expect-error Deno import
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-// @ts-ignore
+// @ts-expect-error Deno import
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -73,8 +73,9 @@ serve(async (req: Request) => {
       checkedAt: new Date().toISOString()
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
 
@@ -85,7 +86,7 @@ async function checkChannelSubscription(userId: string, token: string, channelId
     if (!data.ok) return false
     const status = data.result.status
     return ['creator', 'administrator', 'member'].includes(status)
-  } catch (e) {
+  } catch {
     return false
   }
 }

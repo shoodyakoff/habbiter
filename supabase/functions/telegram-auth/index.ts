@@ -1,8 +1,8 @@
-// @ts-ignore
+// @ts-expect-error Deno import
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-// @ts-ignore
+// @ts-expect-error Deno import
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-// @ts-ignore
+// @ts-expect-error Deno import
 import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts"
 
 const corsHeaders = {
@@ -52,7 +52,7 @@ serve(async (req: Request) => {
     
     // Try to create auth user (ignore if exists)
     // We use admin.createUser to bypass email confirmation if possible or just standard flow
-    const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
+    const { data: createdUser } = await supabase.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
@@ -106,12 +106,14 @@ serve(async (req: Request) => {
       session: sessionData.session
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error:', error)
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function verifyTelegramHash(data: any, token: string) {
   const { hash, ...rest } = data
   // 1. Create data-check-string

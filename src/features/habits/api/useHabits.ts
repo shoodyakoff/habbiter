@@ -30,6 +30,7 @@ export const useHabitsQuery = () => {
       
       // Map DB schema to Frontend schema if needed
       // Currently they match closely but keys are snake_case in DB
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return data.map((h: any) => ({
         id: h.id,
         name: h.name,
@@ -64,6 +65,7 @@ export const useHabitRecordsQuery = (date: string) => {
         
       if (error) throw error;
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return data.map((r: any) => ({
         id: r.id,
         habitId: r.habit_id,
@@ -90,6 +92,7 @@ export const useWeekRecordsQuery = (dates: string[]) => {
         
       if (error) throw error;
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return data.map((r: any) => ({
         id: r.id,
         habitId: r.habit_id,

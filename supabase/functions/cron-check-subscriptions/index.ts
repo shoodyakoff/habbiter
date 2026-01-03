@@ -1,6 +1,6 @@
-// @ts-ignore
+// @ts-expect-error Deno import
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-// @ts-ignore
+// @ts-expect-error Deno import
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')!
@@ -8,7 +8,7 @@ const TELEGRAM_CHANNEL_ID = Deno.env.get('TELEGRAM_CHANNEL_ID')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-serve(async (req: Request) => {
+serve(async () => {
   try {
     // 1. Get users to check (expired cache)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -67,9 +67,10 @@ serve(async (req: Request) => {
     }
 
     return new Response(JSON.stringify({ processed: results.length, results }), { headers: { 'Content-Type': 'application/json' } })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error)
-    return new Response(JSON.stringify({ error: error.message }), { status: 400 })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 400 })
   }
 })
 
@@ -80,7 +81,7 @@ async function checkChannelSubscription(userId: string | number, token: string, 
     if (!data.ok) return false
     const status = data.result.status
     return ['creator', 'administrator', 'member'].includes(status)
-  } catch (e) {
+  } catch {
     return false
   }
 }

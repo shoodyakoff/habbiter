@@ -1,6 +1,6 @@
-// @ts-ignore
+// @ts-expect-error Deno import
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-// @ts-ignore
+// @ts-expect-error Deno import
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')!
@@ -25,7 +25,7 @@ serve(async (req: Request) => {
             const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
             
             // Verify token exists and is pending
-            const { data: tokenData, error: tokenError } = await supabase
+            const { data: tokenData } = await supabase
                 .from('auth_tokens')
                 .select('*')
                 .eq('token', token)
@@ -166,7 +166,7 @@ async function checkChannelSubscription(userId: string | number, token: string, 
     if (!data.ok) return false
     const status = data.result.status
     return ['creator', 'administrator', 'member'].includes(status)
-  } catch (e) {
+  } catch {
     return false
   }
 }

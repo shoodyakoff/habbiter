@@ -52,7 +52,7 @@ interface CreateHabitFormProps {
 
 export const CreateHabitForm = ({ onSuccess, initialValues, habitId }: CreateHabitFormProps) => {
   const router = useRouter();
-  const { createHabit, updateHabit } = useHabitMutations();
+  const { createHabit } = useHabitMutations();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(createHabitSchema),
@@ -186,7 +186,8 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId }: CreateHab
           )}
         />
 
-        <Button type="submit" className="w-full h-12 text-lg">
+        <Button type="submit" className="w-full h-12 text-lg" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {habitId ? 'Сохранить изменения' : 'Создать привычку'}
         </Button>
       </form>

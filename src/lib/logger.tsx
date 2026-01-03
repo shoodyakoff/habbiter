@@ -10,14 +10,14 @@ interface LogEntry {
   timestamp: string;
   level: LogLevel;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 // Global log store
 const logs: LogEntry[] = [];
 const listeners: Set<() => void> = new Set();
 
-const addLog = (level: LogLevel, message: string, data?: any) => {
+const addLog = (level: LogLevel, message: string, data?: unknown) => {
   const entry: LogEntry = {
     id: Math.random().toString(36).substring(7),
     timestamp: new Date().toLocaleTimeString(),
@@ -38,6 +38,7 @@ const addLog = (level: LogLevel, message: string, data?: any) => {
 // Handle circular references in JSON
 const getCircularReplacer = () => {
   const seen = new WeakSet();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (key: string, value: any) => {
     if (typeof value === 'object' && value !== null) {
       if (seen.has(value)) {
@@ -50,10 +51,16 @@ const getCircularReplacer = () => {
 };
 
 export const logger = {
-  info: (msg: string, data?: any) => addLog('info', msg, data),
-  warn: (msg: string, data?: any) => addLog('warn', msg, data),
-  error: (msg: string, data?: any) => addLog('error', msg, data),
+  info: (msg: string, data?: unknown) => addLog('info', msg, data),
+  warn: (msg: string, data?: unknown) => addLog('warn', msg, data),
+  error: (msg: string, data?: unknown) => addLog('error', msg, data),
 };
+
+declare global {
+  interface Window {
+    toggleDebug?: () => void;
+  }
+}
 
 export const DebugConsole = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,7 +81,7 @@ export const DebugConsole = () => {
 
     // Global trigger: 5 clicks on document body top left (hidden trigger)
     // Or just expose window.toggleDebug()
-    (window as any).toggleDebug = () => setIsOpen(prev => !prev);
+    window.toggleDebug = () => setIsOpen(prev => !prev);
 
     return () => {
         listeners.delete(update);
@@ -119,7 +126,7 @@ export const DebugConsole = () => {
                 <span className="uppercase font-bold">{entry.level}</span>
             </div>
             <div className="break-all whitespace-pre-wrap">{entry.message}</div>
-            {entry.data && (
+            {!!entry.data && (
                 <pre className="mt-2 bg-black/50 p-2 rounded overflow-auto max-h-40 text-[10px] text-gray-400">
                     {JSON.stringify(entry.data, null, 2)}
                 </pre>
