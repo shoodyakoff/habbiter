@@ -111,6 +111,9 @@ export default function LoginPage() {
   }, [pollingToken, supabaseUrl, router]);
 
   const handleMiniAppAuth = async (initData: string) => {
+    // Prevent infinite loops if auth fails repeatedly
+    if (isDevLoginLoading) return;
+    
     setIsDevLoginLoading(true);
     try {
         const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth-miniapp`, {
@@ -134,7 +137,8 @@ export default function LoginPage() {
         }
     } catch (e: any) {
         console.error('Mini App Auth Error:', e);
-        // Fallback to widget if auto-login fails is usually not needed but good to keep UI visible
+        // Show error but don't loop
+        alert('Ошибка входа через Mini App: ' + e.message);
     } finally {
         setIsDevLoginLoading(false);
     }
