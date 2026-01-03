@@ -1,19 +1,62 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [isDevLoginLoading, setIsDevLoginLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
       router.push('/');
     }
   }, [user, loading, router]);
+
+  const handleDevLogin = async () => {
+    setIsDevLoginLoading(true);
+    try {
+        const { error } = await supabase.auth.signInWithPassword({
+            email: 'test@example.com',
+            password: 'password123'
+        });
+        
+        if (error) {
+            // Try to sign up if login fails
+            const { error: signUpError } = await supabase.auth.signUp({
+                email: 'test@example.com',
+                password: 'password123',
+                options: {
+                    data: {
+                        first_name: 'Test',
+                        last_name: 'User',
+                        username: 'test_user',
+                        photo_url: '',
+                        telegram_id: 123456789
+                    }
+                }
+            });
+            
+            if (signUpError) {
+                alert('Ошибка входа (Dev): ' + signUpError.message);
+            } else {
+                // Auto login should happen after sign up if email confirm is off, otherwise alert
+                alert('Тестовый пользователь создан! Попробуйте войти еще раз (или проверьте почту если включено подтверждение).');
+            }
+        } else {
+            router.push('/');
+        }
+    } catch (e) {
+        console.error(e);
+    } finally {
+        setIsDevLoginLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Load Telegram Widget
@@ -104,6 +147,20 @@ export default function LoginPage() {
                     <li>Используйте <b>ngrok</b> или задеплойте на GitHub Pages</li>
                     <li>Убедитесь, что переменные окружения (.env.local) настроены корректно</li>
                 </ul>
+
+                <div className="mt-4 pt-4 border-t border-yellow-500/20">
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full bg-yellow-500/20 border-yellow-500/50 hover:bg-yellow-500/30 text-yellow-700"
+                        onClick={handleDevLogin}
+                        disabled={isDevLoginLoading}
+                    >
+                        {isDevLoginLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserCircle className="w-4 h-4 mr-2" />}
+                        Тестовый вход (Dev)
+                    </Button>
+                    <p className="text-[10px] mt-1 opacity-80">Создаст user: test@example.com / password123</p>
+                </div>
              </div>
         )}
 
