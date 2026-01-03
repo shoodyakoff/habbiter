@@ -33,11 +33,20 @@ export default function LoginPage() {
 
   useEffect(() => {
     // Check if running in Telegram Mini App
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
-        const initData = (window as any).Telegram.WebApp.initData;
-        console.log('[LoginPage] Detected Telegram Mini App', initData);
-        if (initData) {
-            handleMiniAppAuth(initData);
+    // We check for initData AND if we are inside the iframe/webview
+    if (typeof window !== 'undefined') {
+        const tg = (window as any).Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            const initData = tg.initData;
+            console.log('[LoginPage] Detected Telegram Mini App', { 
+                initData: initData ? 'PRESENT' : 'MISSING',
+                platform: tg.platform 
+            });
+            
+            if (initData) {
+                handleMiniAppAuth(initData);
+            }
         }
     }
   }, []);

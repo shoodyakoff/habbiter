@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/shared/BottomNav";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from "react";
+import Script from "next/script";
 
 const onest = Onest({
   variable: "--font-onest",
@@ -22,6 +23,12 @@ export default function RootLayout({
 
   return (
     <html lang="ru">
+      <head>
+        <Script 
+          src="https://telegram.org/js/telegram-web-app.js" 
+          strategy="beforeInteractive" 
+        />
+      </head>
       <body
         className={`${onest.variable} font-sans antialiased bg-background text-foreground flex flex-col min-h-screen`}
       >
