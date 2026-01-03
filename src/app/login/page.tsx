@@ -7,6 +7,8 @@ import { Loader2, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 
+import { logger } from '@/lib/logger';
+
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -20,11 +22,9 @@ export default function LoginPage() {
 
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || '';
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  // authUrl is no longer needed for data-onauth flow
   
   useEffect(() => {
-    // Debug logging for environment
-    console.log('[LoginPage] Config:', {
+    logger.info('[LoginPage] Config', {
         botUsername: botUsername ? `${botUsername.substring(0, 3)}...` : 'MISSING',
         supabaseUrl: supabaseUrl ? 'PRESENT' : 'MISSING',
     });
@@ -33,19 +33,16 @@ export default function LoginPage() {
   const [isMiniApp, setIsMiniApp] = useState(false);
 
   useEffect(() => {
-    // Check if running in Telegram Mini App
-    // We check for initData AND if we are inside the iframe/webview
     if (typeof window !== 'undefined') {
         const tg = (window as any).Telegram?.WebApp;
         if (tg) {
             tg.ready();
             const initData = tg.initData;
-            console.log('[LoginPage] Detected Telegram Mini App', { 
+            logger.info('[LoginPage] Detected Telegram Mini App', { 
                 initData: initData ? 'PRESENT' : 'MISSING',
                 platform: tg.platform 
             });
             
-            // If platform is not 'unknown', we are likely in Telegram
             if (tg.platform && tg.platform !== 'unknown') {
                 setIsMiniApp(true);
             }
@@ -62,24 +59,27 @@ export default function LoginPage() {
   const startDeepLinkAuth = async () => {
       setIsDevLoginLoading(true);
       try {
-          // 1. Generate Token
+          logger.info('Starting Deep Link Auth');
           const response = await fetch(`${supabaseUrl}/functions/v1/generate-auth-token`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'generate' }),
           });
+          
+          if (!response.ok) {
+              const text = await response.text();
+              throw new Error(`Server error ${response.status}: ${text}`);
+          }
+
           const data = await response.json();
           if (!data.token) throw new Error('Failed to generate token');
           
           setPollingToken(data.token);
           
-          // 2. Open Telegram Bot
           const botLink = `https://t.me/${botUsername}?start=auth_${data.token}`;
           window.location.href = botLink;
-          
-          // 3. Start Polling (handled by useEffect)
       } catch (e: any) {
-          console.error(e);
+          logger.error('Error starting auth', e);
           alert('Error starting auth: ' + e.message);
           setIsDevLoginLoading(false);
       }
@@ -95,6 +95,12 @@ export default function LoginPage() {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ action: 'poll', token: pollingToken }),
               });
+              
+              if (!res.ok) {
+                  logger.warn(`Polling failed: ${res.status}`);
+                  return;
+              }
+
               const data = await res.json();
               
               if (data.status === 'success' && data.session) {
@@ -103,7 +109,7 @@ export default function LoginPage() {
                   router.push('/');
               }
           } catch (e) {
-              console.error('Polling error', e);
+              logger.error('Polling error', e);
           }
       }, 2000);
       
@@ -111,11 +117,11 @@ export default function LoginPage() {
   }, [pollingToken, supabaseUrl, router]);
 
   const handleMiniAppAuth = async (initData: string) => {
-    // Prevent infinite loops if auth fails repeatedly
     if (isDevLoginLoading) return;
     
     setIsDevLoginLoading(true);
     try {
+        logger.info('Sending initData to backend');
         const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth-miniapp`, {
             method: 'POST',
             headers: {
@@ -124,11 +130,12 @@ export default function LoginPage() {
             body: JSON.stringify({ initData }),
         });
         
-        const data = await response.json();
-        
         if (!response.ok) {
-            throw new Error(data.error || 'Failed to authenticate via Mini App');
+            const text = await response.text();
+            throw new Error(`Server error ${response.status}: ${text}`);
         }
+        
+        const data = await response.json();
         
         if (data.session) {
             const { error } = await supabase.auth.setSession(data.session);
@@ -136,8 +143,7 @@ export default function LoginPage() {
             router.push('/');
         }
     } catch (e: any) {
-        console.error('Mini App Auth Error:', e);
-        // Show error but don't loop
+        logger.error('Mini App Auth Error', e);
         alert('Ошибка входа через Mini App: ' + e.message);
     } finally {
         setIsDevLoginLoading(false);
@@ -145,7 +151,7 @@ export default function LoginPage() {
   };
 
   const handleTelegramAuth = async (user: any) => {
-      console.log('Telegram Auth Data:', user);
+      logger.info('Telegram Auth Data:', user);
       setIsDevLoginLoading(true); // Reuse loading state or create new one
       
       try {
@@ -158,24 +164,25 @@ export default function LoginPage() {
               body: JSON.stringify(user),
           });
           
-          const data = await response.json();
-          
           if (!response.ok) {
-              throw new Error(data.error || 'Failed to authenticate');
+              const text = await response.text();
+              throw new Error(`Server error ${response.status}: ${text}`);
           }
+
+          const data = await response.json();
           
           if (data.session) {
               // Set Supabase session
               const { error } = await supabase.auth.setSession(data.session);
               if (error) throw error;
               
-              console.log('Session set successfully, redirecting...');
+              logger.info('Session set successfully, redirecting...');
               router.push('/');
           } else {
               throw new Error('No session returned from backend');
           }
       } catch (e: any) {
-          console.error('Auth Error:', e);
+          logger.error('Auth Error:', e);
           alert('Ошибка авторизации: ' + e.message);
       } finally {
           setIsDevLoginLoading(false);
@@ -237,6 +244,19 @@ export default function LoginPage() {
 
 
 
+  const [clickCount, setClickCount] = useState(0);
+
+  const handleLogoClick = () => {
+    setClickCount(prev => {
+        const newCount = prev + 1;
+        if (newCount === 5) {
+            (window as any).toggleDebug?.();
+            return 0;
+        }
+        return newCount;
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -248,7 +268,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 text-center">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+        <h1 
+            onClick={handleLogoClick}
+            className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent cursor-pointer select-none"
+        >
           Habbiter
         </h1>
         <p className="text-muted-foreground">

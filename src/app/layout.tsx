@@ -8,6 +8,7 @@ import AuthGuard from "@/components/auth/AuthGuard";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from "react";
 import Script from "next/script";
+import { DebugConsole } from "@/lib/logger";
 
 const onest = Onest({
   variable: "--font-onest",
@@ -40,6 +41,7 @@ export default function RootLayout({
             </main>
             <BottomNav />
           </AuthGuard>
+          <DebugConsole />
         </QueryClientProvider>
       </body>
     </html>
