@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -17,6 +18,56 @@ export default function LoginPage() {
       router.push('/');
     }
   }, [user, loading, router]);
+
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || '';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  // authUrl is no longer needed for data-onauth flow
+  
+  useEffect(() => {
+    // Debug logging for environment
+    console.log('[LoginPage] Config:', {
+        botUsername: botUsername ? `${botUsername.substring(0, 3)}...` : 'MISSING',
+        supabaseUrl: supabaseUrl ? 'PRESENT' : 'MISSING',
+    });
+  }, [botUsername, supabaseUrl]);
+
+  const handleTelegramAuth = async (user: any) => {
+      console.log('Telegram Auth Data:', user);
+      setIsDevLoginLoading(true); // Reuse loading state or create new one
+      
+      try {
+          // Send data to backend for verification and session creation
+          const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(user),
+          });
+          
+          const data = await response.json();
+          
+          if (!response.ok) {
+              throw new Error(data.error || 'Failed to authenticate');
+          }
+          
+          if (data.session) {
+              // Set Supabase session
+              const { error } = await supabase.auth.setSession(data.session);
+              if (error) throw error;
+              
+              console.log('Session set successfully, redirecting...');
+              router.push('/');
+          } else {
+              throw new Error('No session returned from backend');
+          }
+      } catch (e: any) {
+          console.error('Auth Error:', e);
+          alert('Ошибка авторизации: ' + e.message);
+      } finally {
+          setIsDevLoginLoading(false);
+      }
+  };
 
   const handleDevLogin = async () => {
     setIsDevLoginLoading(true);
@@ -71,61 +122,7 @@ export default function LoginPage() {
     }
   };
 
-  useEffect(() => {
-    // Load Telegram Widget
-    const script = document.createElement('script');
-    script.src = 'https://telegram.org/js/telegram-widget.js?22';
-    
-    const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || '';
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    
-    if (!botUsername || !supabaseUrl) {
-        console.error('Telegram Bot Username or Supabase URL missing');
-        // Set error state to show in UI
-        const errorContainer = document.getElementById('telegram-login-container');
-        if (errorContainer) {
-            errorContainer.innerHTML = `
-                <div class="text-red-500 text-sm p-4 bg-red-50 rounded-lg border border-red-100">
-                    <p class="font-bold">Configuration Error</p>
-                    <p>Telegram Bot Username or Supabase URL is missing.</p>
-                    <p class="text-xs mt-2 text-gray-500">Please check your GitHub Secrets and deployment logs.</p>
-                </div>
-            `;
-        }
-        return;
-    }
 
-    script.setAttribute('data-telegram-login', botUsername);
-    script.setAttribute('data-size', 'large');
-    script.setAttribute('data-radius', '12');
-    script.setAttribute('data-auth-url', `${supabaseUrl}/functions/v1/telegram-auth`);
-    script.setAttribute('data-request-access', 'write');
-    script.async = true;
-
-    script.onload = () => {
-        // Widget loaded
-    };
-    
-    script.onerror = () => {
-        console.error('Failed to load Telegram Widget');
-        const errorContainer = document.getElementById('telegram-login-container');
-        if (errorContainer) {
-            errorContainer.innerHTML = `
-                <div class="text-red-500 text-sm p-4 bg-red-50 rounded-lg border border-red-100">
-                    <p class="font-bold">Load Error</p>
-                    <p>Failed to load Telegram Widget script.</p>
-                    <p class="text-xs mt-2 text-gray-500">Check your internet connection or ad blockers.</p>
-                </div>
-            `;
-        }
-    };
-
-    const container = document.getElementById('telegram-login-container');
-    if (container) {
-        container.innerHTML = '';
-        container.appendChild(script);
-    }
-  }, []);
 
   if (loading) {
     return (
@@ -148,7 +145,11 @@ export default function LoginPage() {
 
       <div className="bg-card border border-border rounded-2xl p-8 shadow-sm w-full max-w-sm">
         <h2 className="text-xl font-semibold mb-6">Вход</h2>
-        <div id="telegram-login-container" className="flex justify-center min-h-[40px]" />
+        
+        <TelegramLoginButton 
+          botUsername={botUsername} 
+          onAuth={handleTelegramAuth}
+        />
         
         {/* Helper text for localhost */}
         {process.env.NODE_ENV === 'development' && (
