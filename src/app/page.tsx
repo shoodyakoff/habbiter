@@ -10,7 +10,7 @@ import { HabitCard } from '@/features/habits/components/HabitCard';
 import { EmptyState } from '@/features/habits/components/EmptyState';
 import { CreateHabitForm } from '@/features/habits/components/CreateHabitForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useHabitsQuery, useHabitRecordsQuery, useHabitMutations, useWeekRecordsQuery } from '@/features/habits/api/useMockHabits';
+import { useHabitsQuery, useHabitRecordsQuery, useHabitMutations, useWeekRecordsQuery } from '@/features/habits/api/useHabits';
 import { format } from 'date-fns';
 import confetti from 'canvas-confetti';
 import { triggerSuccessHaptic } from '@/lib/haptic';
@@ -20,8 +20,8 @@ function HomeContent() {
   const selectedDateStr = searchParams.get('date') || getToday();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const { data: habits, isLoading } = useHabitsQuery();
-  const { data: records } = useHabitRecordsQuery(selectedDateStr);
+  const { data: habits = [], isLoading } = useHabitsQuery();
+  const { data: records = [] } = useHabitRecordsQuery(selectedDateStr);
   const { toggleHabit, archiveHabit } = useHabitMutations();
 
   const activeHabits = habits.filter(h => h.status === 'active');
@@ -55,7 +55,7 @@ function HomeContent() {
   // Compute Week Progress
   const weekDays = useMemo(() => getWeekDays(new Date(selectedDateStr)), [selectedDateStr]);
   const weekDates = weekDays.map(d => format(d, 'yyyy-MM-dd'));
-  const { data: weekRecords } = useWeekRecordsQuery(weekDates);
+  const { data: weekRecords = [] } = useWeekRecordsQuery(weekDates);
 
   const progressMap = useMemo(() => {
     const map: Record<string, 'complete' | 'partial' | 'low' | 'empty'> = {};

@@ -8,6 +8,8 @@ export const HabitSchema = z.object({
   description: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, "Invalid color format").optional(),
   icon: z.string().optional(),
+  frequency: z.enum(['daily', 'specific_days', 'custom']).default('daily'),
+  repeatDays: z.array(z.number()).optional(),
   status: HabitStatusSchema,
   streak: z.number().int().nonnegative().default(0),
   archivedAt: z.string().datetime().optional(),
