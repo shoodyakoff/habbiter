@@ -148,6 +148,33 @@ export const useHabitMutations = () => {
     },
   });
 
+  const updateHabit = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Habit> & { id: string }) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      const { data, error } = await supabase
+        .from('habits')
+        .update({
+            name: updates.name,
+            description: updates.description,
+            icon: updates.icon,
+            color: updates.color,
+            frequency: updates.frequency,
+            repeat_days: updates.repeatDays,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: habitKeys.lists() });
+    },
+  });
+
   const toggleHabit = useMutation({
     mutationFn: async ({ id, date }: { id: string; date: string }) => {
       if (!user) throw new Error('User not authenticated');
@@ -205,9 +232,9 @@ export const useHabitMutations = () => {
   });
 
   return {
-    createHabit: createHabit.mutate,
-    toggleHabit: (id: string, date: string) => toggleHabit.mutate({ id, date }),
-    archiveHabit: archiveHabit.mutate,
-    // Add delete if needed
+    createHabit,
+    updateHabit,
+    toggleHabit,
+    archiveHabit,
   };
 };

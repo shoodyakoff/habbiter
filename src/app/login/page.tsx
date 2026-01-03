@@ -35,6 +35,14 @@ export default function LoginPage() {
     script.setAttribute('data-request-access', 'write');
     script.async = true;
 
+    script.onload = () => {
+        // Widget loaded
+    };
+    
+    script.onerror = () => {
+        console.error('Failed to load Telegram Widget');
+    };
+
     const container = document.getElementById('telegram-login-container');
     if (container) {
         container.innerHTML = '';
@@ -64,6 +72,20 @@ export default function LoginPage() {
       <div className="bg-card border border-border rounded-2xl p-8 shadow-sm w-full max-w-sm">
         <h2 className="text-xl font-semibold mb-6">Вход</h2>
         <div id="telegram-login-container" className="flex justify-center min-h-[40px]" />
+        
+        {/* Helper text for localhost */}
+        {process.env.NODE_ENV === 'development' && (
+             <div className="mt-4 p-4 bg-yellow-500/10 text-yellow-600 rounded-lg text-xs text-left">
+                <p className="font-bold mb-1">🔧 Режим разработки:</p>
+                <p>Если виджет не отображается:</p>
+                <ul className="list-disc pl-4 mt-1 space-y-1">
+                    <li>Проверьте, что домен (localhost) добавлен в BotFather (/setdomain) — <b>не работает для localhost</b></li>
+                    <li>Используйте <b>ngrok</b> или задеплойте на GitHub Pages</li>
+                    <li>Убедитесь, что переменные окружения (.env.local) настроены корректно</li>
+                </ul>
+             </div>
+        )}
+
         <p className="text-xs text-muted-foreground mt-6">
           Авторизуясь, вы соглашаетесь с условиями использования и политикой конфиденциальности.
         </p>

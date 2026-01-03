@@ -49,7 +49,11 @@ function HomeContent() {
   }, [percentage, total]);
 
   const handleToggle = (id: string) => {
-    toggleHabit(id, selectedDateStr);
+    toggleHabit.mutate({ id, date: selectedDateStr });
+  };
+
+  const handleArchive = (id: string) => {
+    archiveHabit.mutate(id);
   };
 
   // Compute Week Progress
@@ -128,7 +132,7 @@ function HomeContent() {
                     habit={habit}
                     completed={isCompleted}
                     onToggle={handleToggle}
-                    onArchive={archiveHabit}
+                    onArchive={handleArchive}
                   />
                 </div>
               );
