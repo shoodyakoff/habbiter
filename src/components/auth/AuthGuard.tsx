@@ -49,7 +49,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       
       checkSub();
     } else {
-        setIsCheckingSubscription(false);
+        const timer = setTimeout(() => setIsCheckingSubscription(false), 0);
+        return () => clearTimeout(timer);
     }
   }, [user, loading, pathname, router]);
 

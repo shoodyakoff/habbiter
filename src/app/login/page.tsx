@@ -33,6 +33,40 @@ export default function LoginPage() {
   const [isMiniApp, setIsMiniApp] = useState(false);
 
   useEffect(() => {
+    const handleMiniAppAuth = async (initData: string) => {
+        if (isDevLoginLoading) return;
+        
+        setIsDevLoginLoading(true);
+        try {
+            logger.info('Sending initData to backend');
+            const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth-miniapp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ initData }),
+            });
+            
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Server error ${response.status}: ${text}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.session) {
+                const { error } = await supabase.auth.setSession(data.session);
+                if (error) throw error;
+                router.push('/');
+            }
+        } catch (e: any) {
+            logger.error('Mini App Auth Error', e);
+            alert('Ошибка входа через Mini App: ' + e.message);
+        } finally {
+            setIsDevLoginLoading(false);
+        }
+    };
+
     if (typeof window !== 'undefined') {
         const tg = (window as any).Telegram?.WebApp;
         if (tg) {
@@ -52,7 +86,7 @@ export default function LoginPage() {
             }
         }
     }
-  }, []);
+  }, [supabaseUrl, router, isDevLoginLoading]);
 
   const [pollingToken, setPollingToken] = useState<string | null>(null);
 
