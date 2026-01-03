@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { Loader2, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
-import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
