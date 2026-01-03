@@ -1,65 +1,152 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { getToday, getWeekDays } from '@/lib/date';
+import { HabitsHeader } from '@/features/habits/components/HabitsHeader';
+import { WeekSwitcher } from '@/features/habits/components/WeekSwitcher';
+import { TodayProgress } from '@/features/habits/components/TodayProgress';
+import { HabitCard } from '@/features/habits/components/HabitCard';
+import { EmptyState } from '@/features/habits/components/EmptyState';
+import { CreateHabitForm } from '@/features/habits/components/CreateHabitForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useHabitsQuery, useHabitRecordsQuery, useHabitMutations, useWeekRecordsQuery } from '@/features/habits/api/useMockHabits';
+import { format } from 'date-fns';
+import confetti from 'canvas-confetti';
+import { triggerSuccessHaptic } from '@/lib/haptic';
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const selectedDateStr = searchParams.get('date') || getToday();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const { data: habits, isLoading } = useHabitsQuery();
+  const { data: records } = useHabitRecordsQuery(selectedDateStr);
+  const { toggleHabit, archiveHabit } = useHabitMutations();
+
+  const activeHabits = habits.filter(h => h.status === 'active');
+
+  // Track previous completion percentage to trigger confetti only on crossing 100%
+  // Simple version: check inside toggle logic or effect.
+  // Using effect is easier but requires tracking previous state.
+  
+  const completedCount = activeHabits.filter(h => 
+    records.some(r => r.habitId === h.id && r.completed)
+  ).length;
+  
+  const total = activeHabits.length;
+  const percentage = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+  
+  React.useEffect(() => {
+    if (percentage === 100 && total > 0) {
+      triggerSuccessHaptic();
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  }, [percentage, total]);
+
+  const handleToggle = (id: string) => {
+    toggleHabit(id, selectedDateStr);
+  };
+
+  // Compute Week Progress
+  const weekDays = useMemo(() => getWeekDays(new Date(selectedDateStr)), [selectedDateStr]);
+  const weekDates = weekDays.map(d => format(d, 'yyyy-MM-dd'));
+  const { data: weekRecords } = useWeekRecordsQuery(weekDates);
+
+  const progressMap = useMemo(() => {
+    const map: Record<string, 'complete' | 'partial' | 'low' | 'empty'> = {};
+    if (activeHabits.length === 0) return map;
+
+    weekDates.forEach(date => {
+      const dayRecords = weekRecords.filter(r => r.date === date && r.completed);
+      // We only care about records for active habits
+      // Note: If a habit was created LATER, it shouldn't count for past?
+      // For MVP, we assume habits exist always.
+      const dayCompletedCount = dayRecords.filter(r => 
+        activeHabits.some(h => h.id === r.habitId)
+      ).length;
+
+      const total = activeHabits.length;
+      const percentage = total > 0 ? (dayCompletedCount / total) : 0;
+
+      if (percentage === 1) map[date] = 'complete';
+      else if (percentage >= 0.5) map[date] = 'partial';
+      else if (percentage > 0) map[date] = 'low';
+      else map[date] = 'empty';
+    });
+    return map;
+  }, [weekDates, weekRecords, activeHabits]);
+
+  if (isLoading) {
+    return <div className="p-4 text-center">Loading...</div>; // TODO: Skeleton
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="pb-24 min-h-screen bg-background">
+      <HabitsHeader />
+      
+      <WeekSwitcher 
+        className="mb-6"
+        progressMap={progressMap}
+      />
+
+      {activeHabits.length > 0 ? (
+        <>
+          <TodayProgress 
+            total={activeHabits.length}
+            completed={completedCount}
+          />
+          
+          <div className="flex flex-wrap gap-3">
+            {activeHabits.map((habit, index) => {
+              const isCompleted = records.some(r => r.habitId === habit.id && r.completed);
+              
+              // Asymmetric grid logic: 60/40, 30/70, 50/50
+              const position = index % 6;
+              const gap = '0.75rem'; // gap-3
+              let widthPercent = 50;
+
+              switch (position) {
+                case 0: widthPercent = 60; break;
+                case 1: widthPercent = 40; break;
+                case 2: widthPercent = 30; break;
+                case 3: widthPercent = 70; break;
+                case 4: widthPercent = 50; break;
+                case 5: widthPercent = 50; break;
+              }
+
+              return (
+                <div 
+                  key={habit.id} 
+                  style={{ width: `calc(${widthPercent}% - (${gap} / 2))` }}
+                >
+                  <HabitCard
+                    habit={habit}
+                    completed={isCompleted}
+                    onToggle={handleToggle}
+                    onArchive={archiveHabit}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <EmptyState onCreate={() => setIsCreateOpen(true)} />
+      )}
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Создать привычку</DialogTitle>
+          </DialogHeader>
+          <CreateHabitForm onSuccess={() => setIsCreateOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
