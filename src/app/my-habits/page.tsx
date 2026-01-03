@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Plus, PencilSimple } from '@phosphor-icons/react';
-import { useHabitsQuery } from '@/features/habits/api/useMockHabits';
+import { useHabitsQuery } from '@/features/habits/api/useHabits';
 import { CreateHabitForm } from '@/features/habits/components/CreateHabitForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { getIcon } from '@/components/shared/Icon/IconCatalog';
 import { Habit } from '@/features/habits/types/schema';
 
 export default function MyHabitsPage() {
-  const { data: habits, isLoading } = useHabitsQuery();
+  const { data: habits = [], isLoading } = useHabitsQuery();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
 
