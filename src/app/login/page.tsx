@@ -25,6 +25,17 @@ export default function LoginPage() {
     
     if (!botUsername || !supabaseUrl) {
         console.error('Telegram Bot Username or Supabase URL missing');
+        // Set error state to show in UI
+        const errorContainer = document.getElementById('telegram-login-container');
+        if (errorContainer) {
+            errorContainer.innerHTML = `
+                <div class="text-red-500 text-sm p-4 bg-red-50 rounded-lg border border-red-100">
+                    <p class="font-bold">Configuration Error</p>
+                    <p>Telegram Bot Username or Supabase URL is missing.</p>
+                    <p class="text-xs mt-2 text-gray-500">Please check your GitHub Secrets and deployment logs.</p>
+                </div>
+            `;
+        }
         return;
     }
 
@@ -41,6 +52,16 @@ export default function LoginPage() {
     
     script.onerror = () => {
         console.error('Failed to load Telegram Widget');
+        const errorContainer = document.getElementById('telegram-login-container');
+        if (errorContainer) {
+            errorContainer.innerHTML = `
+                <div class="text-red-500 text-sm p-4 bg-red-50 rounded-lg border border-red-100">
+                    <p class="font-bold">Load Error</p>
+                    <p>Failed to load Telegram Widget script.</p>
+                    <p class="text-xs mt-2 text-gray-500">Check your internet connection or ad blockers.</p>
+                </div>
+            `;
+        }
     };
 
     const container = document.getElementById('telegram-login-container');
