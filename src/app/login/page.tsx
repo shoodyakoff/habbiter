@@ -31,6 +31,8 @@ export default function LoginPage() {
     });
   }, [botUsername, supabaseUrl]);
 
+  const [isMiniApp, setIsMiniApp] = useState(false);
+
   useEffect(() => {
     // Check if running in Telegram Mini App
     // We check for initData AND if we are inside the iframe/webview
@@ -44,12 +46,70 @@ export default function LoginPage() {
                 platform: tg.platform 
             });
             
+            // If platform is not 'unknown', we are likely in Telegram
+            if (tg.platform && tg.platform !== 'unknown') {
+                setIsMiniApp(true);
+            }
+
             if (initData) {
                 handleMiniAppAuth(initData);
             }
         }
     }
   }, []);
+
+  const [pollingToken, setPollingToken] = useState<string | null>(null);
+
+  const startDeepLinkAuth = async () => {
+      setIsDevLoginLoading(true);
+      try {
+          // 1. Generate Token
+          const response = await fetch(`${supabaseUrl}/functions/v1/generate-auth-token`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'generate' }),
+          });
+          const data = await response.json();
+          if (!data.token) throw new Error('Failed to generate token');
+          
+          setPollingToken(data.token);
+          
+          // 2. Open Telegram Bot
+          const botLink = `https://t.me/${botUsername}?start=auth_${data.token}`;
+          window.location.href = botLink;
+          
+          // 3. Start Polling (handled by useEffect)
+      } catch (e: any) {
+          console.error(e);
+          alert('Error starting auth: ' + e.message);
+          setIsDevLoginLoading(false);
+      }
+  };
+
+  useEffect(() => {
+      if (!pollingToken) return;
+      
+      const interval = setInterval(async () => {
+          try {
+              const res = await fetch(`${supabaseUrl}/functions/v1/generate-auth-token`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'poll', token: pollingToken }),
+              });
+              const data = await res.json();
+              
+              if (data.status === 'success' && data.session) {
+                  clearInterval(interval);
+                  await supabase.auth.setSession(data.session);
+                  router.push('/');
+              }
+          } catch (e) {
+              console.error('Polling error', e);
+          }
+      }, 2000);
+      
+      return () => clearInterval(interval);
+  }, [pollingToken, supabaseUrl, router]);
 
   const handleMiniAppAuth = async (initData: string) => {
     setIsDevLoginLoading(true);
@@ -196,10 +256,35 @@ export default function LoginPage() {
       <div className="bg-card border border-border rounded-2xl p-8 shadow-sm w-full max-w-sm">
         <h2 className="text-xl font-semibold mb-6">Вход</h2>
         
-        <TelegramLoginButton 
-          botUsername={botUsername} 
-          onAuth={handleTelegramAuth}
-        />
+        {isMiniApp ? (
+             <div className="flex flex-col items-center justify-center py-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                <p className="text-sm text-muted-foreground">Авторизация...</p>
+             </div>
+        ) : (
+            <div className="flex flex-col gap-4 w-full">
+                <Button 
+                    className="w-full bg-[#24A1DE] hover:bg-[#208bbf] text-white font-semibold py-6"
+                    onClick={startDeepLinkAuth}
+                    disabled={isDevLoginLoading || !!pollingToken}
+                >
+                    {pollingToken ? (
+                        <div className="flex items-center">
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                            Ожидание подтверждения...
+                        </div>
+                    ) : (
+                        "Войти через Telegram"
+                    )}
+                </Button>
+                
+                {pollingToken && (
+                    <p className="text-xs text-muted-foreground animate-pulse">
+                        Мы открыли Telegram. Нажмите "Запустить" в боте.
+                    </p>
+                )}
+            </div>
+        )}
         
         {/* Helper text for localhost */}
         {process.env.NODE_ENV === 'development' && (
