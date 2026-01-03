@@ -22,6 +22,7 @@ export default function LoginPage() {
 
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || '';
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   
   useEffect(() => {
     logger.info('[LoginPage] Config', {
@@ -43,6 +44,7 @@ export default function LoginPage() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
                 },
                 body: JSON.stringify({ initData }),
             });
