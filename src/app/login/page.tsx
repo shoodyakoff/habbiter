@@ -95,10 +95,16 @@ export default function LoginPage() {
   const startDeepLinkAuth = async () => {
       setIsDevLoginLoading(true);
       try {
+          if (!supabaseAnonKey) throw new Error('Supabase Anon Key is missing');
+
           logger.info('Starting Deep Link Auth');
           const response = await fetch(`${supabaseUrl}/functions/v1/generate-auth-token`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseAnonKey}`,
+                  'apikey': supabaseAnonKey,
+              },
               body: JSON.stringify({ action: 'generate' }),
           });
           
