@@ -21,7 +21,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ICON_CATALOG } from '@/components/shared/Icon/IconCatalog';
 import { HABIT_COLORS, HabitColorSchema } from '@/features/habits/types/schema';
 import { cn } from '@/lib/utils';
-import { Loader2, AlertTriangle, Check } from 'lucide-react';
+import { Check } from '@phosphor-icons/react';
+import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 
 const createHabitSchema = z.object({
   name: z.string().min(1, 'Название обязательно').max(100),
@@ -55,7 +57,7 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
     defaultValues: {
       name: initialValues?.name || '',
       description: initialValues?.description || '',
-      color: initialValues?.color || 'sapphire', // Sapphire default
+      color: initialValues?.color || 'sapphire',
       icon: initialValues?.icon || 'target',
       trackNotes: initialValues?.trackNotes || false,
       trackWeight: initialValues?.trackWeight || false,
@@ -86,8 +88,8 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
                 description: data.description,
                 color: data.color,
                 icon: data.icon,
-                frequency: 'daily', // Default
-                repeatDays: [1, 2, 3, 4, 5, 6, 7], // Default
+                frequency: 'daily',
+                repeatDays: [1, 2, 3, 4, 5, 6, 7],
                 trackNotes: data.trackNotes,
                 trackWeight: data.trackWeight,
                 trackVolume: data.trackVolume,
@@ -104,7 +106,6 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
         }
     } catch (error) {
         console.error('Failed to save habit', error);
-        // Maybe show toast
     }
   };
 
@@ -112,204 +113,51 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-6 pb-20", className)}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-8 pb-32", className)}>
         
-        {habitId && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 p-4 rounded-lg flex gap-3">
-                <AlertTriangle className="text-yellow-600 dark:text-yellow-500 shrink-0" size={20} />
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    Изменение названия или цвета обновит отображение привычки за весь период статистики.
-                </p>
-            </div>
-        )}
-
+        {/* Name Input */}
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Название</FormLabel>
+            <FormItem className="space-y-3">
+              <FormLabel className="text-base font-semibold">Название</FormLabel>
               <FormControl>
-                <Input placeholder="Например, Медитация" {...field} />
+                <Input 
+                  placeholder="Например, Медитация" 
+                  {...field} 
+                  className="h-12 text-lg bg-white dark:bg-card border-border/40 focus:border-primary/50 transition-colors shadow-sm"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Описание (опционально)</FormLabel>
-              <FormControl>
-                <Textarea placeholder="10 минут утром..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="space-y-4">
-            <h3 className="text-sm font-medium">Параметры отслеживания</h3>
-            <div className="grid gap-4 bg-card p-4 rounded-xl border">
-                <FormField
-                    control={form.control}
-                    name="trackNotes"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <FormLabel>
-                                    Комментарии
-                                </FormLabel>
-                                <FormDescription>
-                                    Заметки к каждому выполнению
-                                </FormDescription>
-                            </div>
-                        </FormItem>
-                    )}
-                />
-                
-                <FormField
-                    control={form.control}
-                    name="trackWeight"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <FormLabel>
-                                    Вес (г)
-                                </FormLabel>
-                            </div>
-                        </FormItem>
-                    )}
-                />
-
-                <FormField
-                    control={form.control}
-                    name="trackVolume"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <FormLabel>
-                                    Объем (мл)
-                                </FormLabel>
-                            </div>
-                        </FormItem>
-                    )}
-                />
-
-                <FormField
-                    control={form.control}
-                    name="trackCount"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <FormLabel>
-                                    Количество (шт)
-                                </FormLabel>
-                            </div>
-                        </FormItem>
-                    )}
-                />
-
-                <FormField
-                    control={form.control}
-                    name="trackDuration"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <FormLabel>
-                                    Длительность (мин)
-                                </FormLabel>
-                            </div>
-                        </FormItem>
-                    )}
-                />
-            </div>
-        </div>
-
-        <FormField
-          control={form.control}
-          name="color"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Цвет</FormLabel>
-              <FormControl>
-                <div className="grid grid-cols-5 gap-3">
-                  {HABIT_COLORS.map((colorName) => (
-                    <button
-                      key={colorName}
-                      type="button"
-                      className={cn(
-                        "w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center",
-                        field.value === colorName ? "border-foreground scale-110" : "border-transparent"
-                      )}
-                      style={{ backgroundColor: `var(--color-habit-${colorName})` }}
-                      onClick={() => field.onChange(colorName)}
-                    >
-                      {field.value === colorName && <Check className="text-white" strokeWidth={3} />}
-                    </button>
-                  ))}
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
+        {/* Icon Picker */}
         <FormField
           control={form.control}
           name="icon"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Иконка</FormLabel>
+            <FormItem className="space-y-4 pt-2">
+              <FormLabel className="text-base font-semibold">Иконка</FormLabel>
               <FormControl>
-                <div className="grid grid-cols-5 gap-3">
+                <div className="grid grid-cols-6 gap-3">
                   {Object.entries(ICON_CATALOG).map(([name, Icon]) => (
-                    <button
+                    <motion.button
                       key={name}
                       type="button"
+                      whileTap={{ scale: 0.9 }}
                       className={cn(
-                        "flex items-center justify-center w-12 h-12 rounded-xl transition-all",
+                        "aspect-square rounded-2xl flex items-center justify-center transition-all",
                         field.value === name 
-                          ? "bg-primary/10 text-primary" 
-                          : "bg-card text-muted-foreground hover:bg-muted"
+                          ? "bg-primary text-primary-foreground shadow-md" 
+                          : "bg-white dark:bg-card text-muted-foreground hover:bg-muted border border-border/40 shadow-sm"
                       )}
                       onClick={() => field.onChange(name)}
                     >
                       <Icon size={24} weight={field.value === name ? "fill" : "regular"} />
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </FormControl>
@@ -318,10 +166,120 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
           )}
         />
 
-        <Button type="submit" className="w-full h-12 text-lg" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {habitId ? 'Сохранить изменения' : 'Создать привычку'}
-        </Button>
+        {/* Description Input */}
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <div className="space-y-0.5">
+                  <FormLabel className="text-base font-semibold">Описание</FormLabel>
+                  <p className="text-xs text-muted-foreground">Не обязательно</p>
+              </div>
+              <FormControl>
+                <Textarea 
+                  placeholder="10 минут утром..." 
+                  {...field} 
+                  className="min-h-[100px] bg-white dark:bg-card border-border/40 focus:border-primary/50 resize-none transition-colors shadow-sm"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Tracking Options */}
+        <div className="space-y-4 pt-2">
+            <div className="space-y-0.5">
+                <h3 className="text-base font-semibold">Параметры отслеживания</h3>
+                <p className="text-xs text-muted-foreground">Не обязательно</p>
+            </div>
+            <div className="bg-white dark:bg-card/50 rounded-2xl border border-border/40 overflow-hidden divide-y divide-border/30 shadow-sm">
+                {[
+                  // Removed trackNotes
+                  { name: 'trackWeight' as const, label: 'Вес (г)' },
+                  { name: 'trackVolume' as const, label: 'Объем (мл)' },
+                  { name: 'trackCount' as const, label: 'Количество (шт)' },
+                  { name: 'trackDuration' as const, label: 'Длительность (мин)' },
+                ].map((item) => (
+                  <FormField
+                    key={item.name}
+                    control={form.control}
+                    name={item.name}
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between p-4 space-y-0 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => field.onChange(!field.value)}>
+                            <div className="space-y-1">
+                                <FormLabel className="text-base font-medium cursor-pointer">
+                                    {item.label}
+                                </FormLabel>
+                            </div>
+                            <FormControl>
+                                <Checkbox
+                                    checked={!!field.value}
+                                    onCheckedChange={field.onChange}
+                                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary w-6 h-6 rounded-full border-2"
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
+                ))}
+            </div>
+        </div>
+
+        {/* Color Picker */}
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem className="space-y-4 pt-2">
+              <FormLabel className="text-base font-semibold">Цвет</FormLabel>
+              <FormControl>
+                <div className="grid grid-cols-6 gap-3">
+                  {HABIT_COLORS.map((colorName) => (
+                    <motion.button
+                      key={colorName}
+                      type="button"
+                      whileTap={{ scale: 0.9 }}
+                      className={cn(
+                        "aspect-square rounded-2xl transition-all flex items-center justify-center relative overflow-hidden",
+                        field.value === colorName ? "ring-2 ring-offset-2 ring-foreground shadow-sm" : "opacity-90 hover:opacity-100"
+                      )}
+                      style={{ backgroundColor: `var(--color-habit-${colorName})` }}
+                      onClick={() => field.onChange(colorName)}
+                    >
+                      {field.value === colorName && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        >
+                          <Check size={20} weight="bold" className="text-white drop-shadow-sm" />
+                        </motion.div>
+                      )}
+                    </motion.button>
+                  ))}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border/40 z-[100] safe-area-bottom">
+           <div className="max-w-md mx-auto w-full">
+            <Button 
+                type="submit" 
+                size="lg" 
+                className="w-full text-base font-semibold h-12 rounded-xl shadow-lg shadow-primary/20"
+                disabled={isSubmitting}
+            >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {habitId ? 'Сохранить изменения' : 'Создать привычку'}
+            </Button>
+           </div>
+        </div>
+
       </form>
     </Form>
   );

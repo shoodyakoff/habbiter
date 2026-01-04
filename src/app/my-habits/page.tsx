@@ -1,52 +1,45 @@
 'use client';
 
-import { useHabitsQuery, useHabitMutations } from '@/features/habits/api/useHabits';
-import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Archive, Icon } from '@phosphor-icons/react';
+import { useHabitsQuery } from '@/features/habits/api/useHabits';
+import { CaretRight } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { getTextColorForHabit } from '@/lib/colors';
 import { getIcon } from '@/components/shared/Icon/IconCatalog';
 import { FloatingActionButton } from '@/features/habits/components/FloatingActionButton';
+import { cn } from '@/lib/utils';
 
 export default function MyHabitsPage() {
   const router = useRouter();
   const { data: habits = [], isLoading } = useHabitsQuery();
-  const { archiveHabit } = useHabitMutations();
   
   const activeHabits = habits.filter(h => h.status === 'active');
-
-  const handleArchive = (id: string) => {
-    if (confirm('Архивировать привычку?')) {
-        archiveHabit.mutate(id);
-    }
-  };
 
   if (isLoading) {
     return <div className="p-4 text-center">Loading...</div>;
   }
 
   return (
-    <div className="pb-24 px-4 pt-4">
+    <div className="pb-24 px-4 pt-6 min-h-screen bg-background">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Мои привычки</h1>
-        <Button
-          onClick={() => router.push('/habits/new')}
-          size="default"
-        >
-          <Plus size={20} weight="bold" className="mr-2" />
-          Создать
-        </Button>
+        <h1 className="text-3xl font-bold tracking-tight">Мои привычки</h1>
       </div>
 
+      {/* List */}
       <div className="space-y-3">
         {activeHabits.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-                Нет активных привычек
+            <div className="flex flex-col items-center justify-center py-20 text-center opacity-50">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                    <span className="text-2xl">✨</span>
+                </div>
+                <p className="text-lg font-medium">Список пуст</p>
+                <p className="text-sm">Создайте свою первую привычку</p>
             </div>
         ) : (
             activeHabits.map((habit, index) => {
             const IconComponent = getIcon(habit.icon || 'target');
+            const colorVar = `var(--color-habit-${habit.color || 'sapphire'})`;
             
             return (
                 <motion.div
@@ -54,46 +47,51 @@ export default function MyHabitsPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-card border border-border rounded-xl p-4 flex items-center gap-4"
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => router.push(`/habits/edit?id=${habit.id}`)}
+                    className="group relative bg-card hover:bg-accent/50 border border-border/50 rounded-2xl p-3 pr-4 flex items-center gap-4 cursor-pointer transition-colors shadow-sm"
                 >
-                    {/* Icon */}
+                    {/* Icon Container */}
                     <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `var(--color-habit-${habit.color || 'sapphire'})` }}
+                        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                        style={{ backgroundColor: colorVar }}
                     >
-                    <IconComponent size={24} weight="fill" className={getTextColorForHabit(habit.color || 'sapphire')} />
+                        <IconComponent 
+                            size={22} 
+                            weight="fill" 
+                            className={cn(getTextColorForHabit(habit.color || 'sapphire'))} 
+                        />
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-base truncate">{habit.name}</h3>
-                    {habit.description && (
-                        <p className="text-sm text-muted-foreground truncate">{habit.description}</p>
-                    )}
+                    <div className="flex-1 min-w-0 py-1">
+                        <h3 className="font-semibold text-base leading-tight truncate text-foreground">
+                            {habit.name}
+                        </h3>
+                        {habit.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                                {habit.description}
+                            </p>
+                        )}
+                        {!habit.description && (
+                             <p className="text-xs text-muted-foreground mt-0.5">
+                                Настроить параметры
+                            </p>
+                        )}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => router.push(`/habits/edit?id=${habit.id}`)}
-                    >
-                        <Pencil size={18} />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => handleArchive(habit.id)}
-                    >
-                        <Archive size={18} />
-                    </Button>
+                    {/* Action Indicator */}
+                    <div className="text-muted-foreground/50 group-hover:text-primary transition-colors">
+                        <CaretRight size={20} weight="bold" />
                     </div>
                 </motion.div>
             );
             })
         )}
       </div>
+
+      {/* FAB */}
+      <FloatingActionButton />
     </div>
   );
 }
