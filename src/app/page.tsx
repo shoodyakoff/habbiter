@@ -159,34 +159,25 @@ function HomeContent() {
 
       {/* Create Habit Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[calc(100vh-40px)] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle>Создать привычку</DialogTitle>
           </DialogHeader>
-          <CreateHabitForm onSuccess={() => setIsCreateOpen(false)} />
+          <CreateHabitForm onSuccess={() => setIsCreateOpen(false)} className="flex-1 overflow-y-auto p-6 pt-2" />
         </DialogContent>
       </Dialog>
 
       {/* Edit Habit Dialog */}
       <Dialog open={!!editingHabit} onOpenChange={(open) => !open && setEditingHabit(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[calc(100vh-40px)] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle>Редактирование привычки</DialogTitle>
           </DialogHeader>
           <CreateHabitForm 
             habitId={editingHabit?.id}
-            initialValues={{
-                name: editingHabit?.name,
-                description: editingHabit?.description,
-                color: editingHabit?.color,
-                icon: editingHabit?.icon,
-                trackNotes: editingHabit?.trackNotes,
-                trackWeight: editingHabit?.trackWeight,
-                trackVolume: editingHabit?.trackVolume,
-                trackCount: editingHabit?.trackCount,
-                trackDuration: editingHabit?.trackDuration,
-            }}
-            onSuccess={() => setEditingHabit(null)} 
+            initialValues={editingHabit || undefined}
+            onSuccess={() => setEditingHabit(null)}
+            className="flex-1 overflow-y-auto p-6 pt-2"
           />
         </DialogContent>
       </Dialog>

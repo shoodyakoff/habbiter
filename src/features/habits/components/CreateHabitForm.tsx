@@ -55,9 +55,10 @@ interface CreateHabitFormProps {
   onSuccess?: () => void;
   initialValues?: Partial<FormValues>;
   habitId?: string;
+  className?: string;
 }
 
-export const CreateHabitForm = ({ onSuccess, initialValues, habitId }: CreateHabitFormProps) => {
+export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }: CreateHabitFormProps) => {
   const router = useRouter();
   const { createHabit, updateHabit } = useHabitMutations();
 
@@ -123,7 +124,7 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId }: CreateHab
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-20">
+      <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-6 pb-20", className)}>
         
         {habitId && (
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 p-4 rounded-lg flex gap-3">

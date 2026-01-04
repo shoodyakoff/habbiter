@@ -79,6 +79,18 @@ export const HabitDetailDialog: React.FC<HabitDetailDialogProps> = ({
   const isCompleted = record?.completed || false;
   const Icon = getIcon(habit.icon || 'check');
 
+  const hasTrackingParams = habit.trackNotes || habit.trackWeight || habit.trackVolume || habit.trackCount || habit.trackDuration;
+
+  if (!hasTrackingParams) {
+      // If there are no tracking parameters, we don't need the inputs section or the save button for inputs.
+      // But we might still want to toggle completion.
+      // However, the user said "If no parameters selected, edit button should not be there".
+      // Since this entire dialog IS the "edit" (fill data) interface, maybe we render a simplified version 
+      // OR we just hide the input fields. 
+      
+      // Let's assume we just show the completion toggle if opened.
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -88,14 +100,6 @@ export const HabitDetailDialog: React.FC<HabitDetailDialogProps> = ({
                 <Icon size={24} weight="fill" className="text-primary" />
                 {habit.name}
             </DialogTitle>
-            <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => onEdit(habit)}>
-                    <Pencil size={20} />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={handleDelete}>
-                    <Trash size={20} />
-                </Button>
-            </div>
           </div>
           <p className="text-sm text-muted-foreground">
             {format(new Date(date), 'd MMMM yyyy', { locale: ru })}
@@ -116,70 +120,76 @@ export const HabitDetailDialog: React.FC<HabitDetailDialogProps> = ({
             </div>
 
             {/* Tracking Inputs */}
-            {habit.trackNotes && (
-                <div className="space-y-2">
-                    <Label>Комментарий</Label>
-                    <Textarea 
-                        placeholder="Как все прошло?" 
-                        value={note} 
-                        onChange={(e) => setNote(e.target.value)} 
-                    />
-                </div>
-            )}
+            {hasTrackingParams && (
+                <>
+                    {habit.trackNotes && (
+                        <div className="space-y-2">
+                            <Label>Комментарий</Label>
+                            <Textarea 
+                                placeholder="Как все прошло?" 
+                                value={note} 
+                                onChange={(e) => setNote(e.target.value)} 
+                            />
+                        </div>
+                    )}
 
-            <div className="grid grid-cols-2 gap-4">
-                {habit.trackWeight && (
-                    <div className="space-y-2">
-                        <Label>Вес (г)</Label>
-                        <Input 
-                            type="number" 
-                            placeholder="0" 
-                            value={weight} 
-                            onChange={(e) => setWeight(e.target.value)} 
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        {habit.trackWeight && (
+                            <div className="space-y-2">
+                                <Label>Вес (г)</Label>
+                                <Input 
+                                    type="number" 
+                                    placeholder="0" 
+                                    value={weight} 
+                                    onChange={(e) => setWeight(e.target.value)} 
+                                />
+                            </div>
+                        )}
+                        {habit.trackVolume && (
+                            <div className="space-y-2">
+                                <Label>Объем (мл)</Label>
+                                <Input 
+                                    type="number" 
+                                    placeholder="0" 
+                                    value={volume} 
+                                    onChange={(e) => setVolume(e.target.value)} 
+                                />
+                            </div>
+                        )}
+                        {habit.trackCount && (
+                            <div className="space-y-2">
+                                <Label>Количество (шт)</Label>
+                                <Input 
+                                    type="number" 
+                                    placeholder="0" 
+                                    value={count} 
+                                    onChange={(e) => setCount(e.target.value)} 
+                                />
+                            </div>
+                        )}
+                        {habit.trackDuration && (
+                            <div className="space-y-2">
+                                <Label>Длительность (мин)</Label>
+                                <Input 
+                                    type="number" 
+                                    placeholder="0" 
+                                    value={duration} 
+                                    onChange={(e) => setDuration(e.target.value)} 
+                                />
+                            </div>
+                        )}
                     </div>
-                )}
-                {habit.trackVolume && (
-                    <div className="space-y-2">
-                        <Label>Объем (мл)</Label>
-                        <Input 
-                            type="number" 
-                            placeholder="0" 
-                            value={volume} 
-                            onChange={(e) => setVolume(e.target.value)} 
-                        />
-                    </div>
-                )}
-                {habit.trackCount && (
-                    <div className="space-y-2">
-                        <Label>Количество (шт)</Label>
-                        <Input 
-                            type="number" 
-                            placeholder="0" 
-                            value={count} 
-                            onChange={(e) => setCount(e.target.value)} 
-                        />
-                    </div>
-                )}
-                {habit.trackDuration && (
-                    <div className="space-y-2">
-                        <Label>Длительность (мин)</Label>
-                        <Input 
-                            type="number" 
-                            placeholder="0" 
-                            value={duration} 
-                            onChange={(e) => setDuration(e.target.value)} 
-                        />
-                    </div>
-                )}
-            </div>
+                </>
+            )}
         </div>
 
-        <DialogFooter>
-          <Button onClick={handleSave} className="w-full">
-            Сохранить
-          </Button>
-        </DialogFooter>
+        {hasTrackingParams && (
+            <DialogFooter>
+              <Button onClick={handleSave} className="w-full">
+                Сохранить
+              </Button>
+            </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

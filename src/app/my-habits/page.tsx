@@ -80,19 +80,18 @@ export default function MyHabitsPage() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[calc(100vh-40px)] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle>{selectedHabit ? 'Редактировать привычку' : 'Создать привычку'}</DialogTitle>
           </DialogHeader>
           <CreateHabitForm 
             habitId={selectedHabit?.id}
-            initialValues={selectedHabit ? {
-              name: selectedHabit.name,
-              description: selectedHabit.description,
-              color: selectedHabit.color,
-              icon: selectedHabit.icon,
-            } : undefined}
-            onSuccess={() => setIsDialogOpen(false)} 
+            initialValues={selectedHabit || undefined}
+            onSuccess={() => {
+              setIsDialogOpen(false);
+              setSelectedHabit(null);
+            }}
+            className="flex-1 overflow-y-auto p-6 pt-2"
           />
         </DialogContent>
       </Dialog>

@@ -80,6 +80,8 @@ export const HabitCard: React.FC<HabitCardProps> = ({
     checked: { pathLength: 1, opacity: 1 }
   };
 
+  const hasTrackingParams = habit.trackNotes || habit.trackWeight || habit.trackVolume || habit.trackCount || habit.trackDuration;
+
   return (
     <div className={cn("relative group touch-pan-y", className)}>
       {/* Background Action (Archive - Left) */}
@@ -100,9 +102,22 @@ export const HabitCard: React.FC<HabitCardProps> = ({
         onDragEnd={handleDragEnd}
         animate={controls}
         whileTap={{ scale: 0.98 }}
-        onClick={() => onClick?.(habit)}
+        onClick={() => {
+          if (hasTrackingParams) {
+            onClick?.(habit);
+          } else {
+             // If no tracking params, clicking the card just toggles? 
+             // Or does nothing?
+             // Usually clicking the card opens details.
+             // If we want "edit button should not be there", maybe we just don't open details?
+             // Let's assume we treat the card click as "open details".
+             // If no details to fill, maybe just toggle?
+             triggerHaptic();
+             onToggle(habit.id);
+          }
+        }}
         className={cn(
-          "relative h-28 rounded-2xl p-4 flex flex-col justify-between shadow-sm",
+          "relative h-28 rounded-2xl p-4 flex flex-col justify-between shadow-sm cursor-pointer",
           // If habit.color is a hex, we use style. If it's a class name, use class.
           // Schema says Hex.
         )}
