@@ -207,25 +207,21 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
                     control={form.control}
                     name={item.name}
                     render={({ field }) => (
-                        <FormItem 
-                          className="flex flex-row items-center justify-between p-4 space-y-0 hover:bg-muted/30 transition-colors cursor-pointer" 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            field.onChange(!field.value);
-                          }}
-                        >
-                            <div className="space-y-1 pointer-events-none">
-                                <FormLabel className="text-base font-medium">
-                                    {item.label}
-                                </FormLabel>
-                            </div>
-                            <FormControl>
-                                <Checkbox
-                                    checked={!!field.value}
-                                    onCheckedChange={field.onChange}
-                                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary w-6 h-6 rounded-full border-2 pointer-events-none"
-                                />
-                            </FormControl>
+                        <FormItem className="space-y-0">
+                            <label className="flex flex-row items-center justify-between p-4 hover:bg-muted/30 transition-colors cursor-pointer w-full">
+                                <div className="space-y-1">
+                                    <span className="text-base font-medium">
+                                        {item.label}
+                                    </span>
+                                </div>
+                                <FormControl>
+                                    <Checkbox
+                                        checked={!!field.value}
+                                        onCheckedChange={field.onChange}
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary w-6 h-6 rounded-full border-2"
+                                    />
+                                </FormControl>
+                            </label>
                         </FormItem>
                     )}
                 />

@@ -102,28 +102,30 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           </motion.button>
         </div>
 
-        {/* Footer: Name */}
-        <div className="mt-auto pr-8">
-          <h3 className={cn("font-semibold text-base leading-tight line-clamp-2", textColorClass)}>
-            {habit.name}
-          </h3>
-          {habit.description && (
-            <p className={cn("text-[10px] opacity-80 mt-1 line-clamp-1", textColorClass)}>
-              {habit.description}
-            </p>
+        {/* Footer: Name and Streak */}
+        <div className="mt-auto flex items-end justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className={cn("font-semibold text-base leading-tight line-clamp-2", textColorClass)}>
+              {habit.name}
+            </h3>
+            {habit.description && (
+              <p className={cn("text-[10px] opacity-80 mt-1 line-clamp-1", textColorClass)}>
+                {habit.description}
+              </p>
+            )}
+          </div>
+        
+          {/* Streak Badge */}
+          {habit.streak > 0 && (
+            <div className={cn(
+              "shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-black/10 backdrop-blur-sm",
+              textColorClass
+            )}>
+              <Flame size={14} weight="fill" className={isLightBg ? "text-red-600" : "text-orange-300"} />
+              <span className="text-xs font-medium">{habit.streak} дн</span>
+            </div>
           )}
         </div>
-        
-        {/* Streak Badge: Absolute Bottom Right */}
-        {habit.streak > 0 && (
-          <div className={cn(
-            "absolute bottom-4 right-4 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-black/10 backdrop-blur-sm",
-            textColorClass
-          )}>
-            <Flame size={14} weight="fill" className={isLightBg ? "text-red-600" : "text-orange-300"} />
-            <span className="text-xs font-medium">{habit.streak} дн</span>
-          </div>
-        )}
       </motion.div>
     </div>
   );
