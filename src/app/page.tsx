@@ -9,8 +9,10 @@ import { TodayProgress } from '@/features/habits/components/TodayProgress';
 import { HabitCard } from '@/features/habits/components/HabitCard';
 import { EmptyState } from '@/features/habits/components/EmptyState';
 import { CreateHabitForm } from '@/features/habits/components/CreateHabitForm';
+import { HabitDetailDialog } from '@/features/habits/components/HabitDetailDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useHabitsQuery, useHabitRecordsQuery, useHabitMutations, useWeekRecordsQuery } from '@/features/habits/api/useHabits';
+import { Habit } from '@/features/habits/types/schema';
 import { format } from 'date-fns';
 import confetti from 'canvas-confetti';
 import { triggerSuccessHaptic } from '@/lib/haptic';
@@ -19,6 +21,8 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const selectedDateStr = searchParams.get('date') || getToday();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
 
   const { data: habits = [], isLoading } = useHabitsQuery();
   const { data: records = [] } = useHabitRecordsQuery(selectedDateStr);
@@ -54,6 +58,15 @@ function HomeContent() {
 
   const handleArchive = (id: string) => {
     archiveHabit.mutate(id);
+  };
+
+  const handleCardClick = (habit: Habit) => {
+    setSelectedHabit(habit);
+  };
+  
+  const handleEditHabit = (habit: Habit) => {
+    setEditingHabit(habit);
+    setSelectedHabit(null);
   };
 
   // Compute Week Progress
@@ -133,6 +146,7 @@ function HomeContent() {
                     completed={isCompleted}
                     onToggle={handleToggle}
                     onArchive={handleArchive}
+                    onClick={handleCardClick}
                   />
                 </div>
               );
@@ -143,6 +157,7 @@ function HomeContent() {
         <EmptyState onCreate={() => setIsCreateOpen(true)} />
       )}
 
+      {/* Create Habit Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -151,6 +166,40 @@ function HomeContent() {
           <CreateHabitForm onSuccess={() => setIsCreateOpen(false)} />
         </DialogContent>
       </Dialog>
+
+      {/* Edit Habit Dialog */}
+      <Dialog open={!!editingHabit} onOpenChange={(open) => !open && setEditingHabit(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Редактирование привычки</DialogTitle>
+          </DialogHeader>
+          <CreateHabitForm 
+            habitId={editingHabit?.id}
+            initialValues={{
+                name: editingHabit?.name,
+                description: editingHabit?.description,
+                color: editingHabit?.color,
+                icon: editingHabit?.icon,
+                trackNotes: editingHabit?.trackNotes,
+                trackWeight: editingHabit?.trackWeight,
+                trackVolume: editingHabit?.trackVolume,
+                trackCount: editingHabit?.trackCount,
+                trackDuration: editingHabit?.trackDuration,
+            }}
+            onSuccess={() => setEditingHabit(null)} 
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Dialog */}
+      <HabitDetailDialog 
+        habit={selectedHabit}
+        record={records.find(r => r.habitId === selectedHabit?.id) || null}
+        date={selectedDateStr}
+        isOpen={!!selectedHabit}
+        onClose={() => setSelectedHabit(null)}
+        onEdit={handleEditHabit}
+      />
     </div>
   );
 }

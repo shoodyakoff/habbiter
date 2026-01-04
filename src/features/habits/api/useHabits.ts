@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Habit } from '../types/schema';
+import { Habit, HabitRecord } from '../types/schema';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
 // Keys
@@ -44,6 +44,11 @@ export const useHabitsQuery = () => {
         createdAt: h.created_at,
         archivedAt: h.archived_at,
         deletedAt: h.deleted_at,
+        trackNotes: h.track_notes,
+        trackWeight: h.track_weight,
+        trackVolume: h.track_volume,
+        trackCount: h.track_count,
+        trackDuration: h.track_duration,
       })) as Habit[];
     },
     enabled: !!user,
@@ -71,6 +76,11 @@ export const useHabitRecordsQuery = (date: string) => {
         habitId: r.habit_id,
         date: r.date,
         completed: r.completed,
+        note: r.note,
+        valueWeight: r.value_weight,
+        valueVolume: r.value_volume,
+        valueCount: r.value_count,
+        valueDuration: r.value_duration,
       }));
     },
     enabled: !!user,
@@ -98,6 +108,11 @@ export const useWeekRecordsQuery = (dates: string[]) => {
         habitId: r.habit_id,
         date: r.date,
         completed: r.completed,
+        note: r.note,
+        valueWeight: r.value_weight,
+        valueVolume: r.value_volume,
+        valueCount: r.value_count,
+        valueDuration: r.value_duration,
       }));
     },
     enabled: !!user && dates.length > 0,
@@ -124,7 +139,12 @@ export const useHabitMutations = () => {
           color: habit.color,
           frequency: habit.frequency,
           repeat_days: habit.repeatDays,
-          status: 'active'
+          status: 'active',
+          track_notes: habit.trackNotes,
+          track_weight: habit.trackWeight,
+          track_volume: habit.trackVolume,
+          track_count: habit.trackCount,
+          track_duration: habit.trackDuration
         })
         .select()
         .single();
@@ -144,6 +164,11 @@ export const useHabitMutations = () => {
         createdAt: data.created_at,
         archivedAt: data.archived_at,
         deletedAt: data.deleted_at,
+        trackNotes: data.track_notes,
+        trackWeight: data.track_weight,
+        trackVolume: data.track_volume,
+        trackCount: data.track_count,
+        trackDuration: data.track_duration,
       } as Habit;
     },
     onSuccess: () => {
@@ -164,6 +189,11 @@ export const useHabitMutations = () => {
             color: updates.color,
             frequency: updates.frequency,
             repeat_days: updates.repeatDays,
+            track_notes: updates.trackNotes,
+            track_weight: updates.trackWeight,
+            track_volume: updates.trackVolume,
+            track_count: updates.trackCount,
+            track_duration: updates.trackDuration,
             updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -188,7 +218,7 @@ export const useHabitMutations = () => {
         .select('*')
         .eq('habit_id', id)
         .eq('date', date)
-        .single();
+        .maybeSingle();
         
       if (existing) {
         // Toggle
@@ -234,10 +264,78 @@ export const useHabitMutations = () => {
     },
   });
 
+  const updateHabitRecord = useMutation({
+    mutationFn: async ({ id, date, ...updates }: { id: string; date: string } & Partial<HabitRecord>) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      // Check if record exists
+      const { data: existing } = await supabase
+        .from('habit_records')
+        .select('*')
+        .eq('habit_id', id)
+        .eq('date', date)
+        .maybeSingle();
+        
+      if (existing) {
+        // Update
+        const { error } = await supabase
+          .from('habit_records')
+          .update({
+             note: updates.note,
+             value_weight: updates.valueWeight,
+             value_volume: updates.valueVolume,
+             value_count: updates.valueCount,
+             value_duration: updates.valueDuration,
+             ...(updates.completed !== undefined ? { completed: updates.completed } : {})
+          })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        // Create
+        const { error } = await supabase
+          .from('habit_records')
+          .insert({
+            habit_id: id,
+            user_id: user.id,
+            date: date,
+            completed: updates.completed !== undefined ? updates.completed : true,
+            note: updates.note,
+            value_weight: updates.valueWeight,
+            value_volume: updates.valueVolume,
+            value_count: updates.valueCount,
+            value_duration: updates.valueDuration,
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, { date }) => {
+      queryClient.invalidateQueries({ queryKey: habitKeys.records(date) });
+      queryClient.invalidateQueries({ queryKey: ['habits', 'week-records'] });
+    },
+  });
+
+  const deleteHabit = useMutation({
+    mutationFn: async (id: string) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      const { error } = await supabase
+        .from('habits')
+        .update({ status: 'deleted', deleted_at: new Date().toISOString() })
+        .eq('id', id);
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: habitKeys.lists() });
+    },
+  });
+
   return {
     createHabit,
     updateHabit,
     toggleHabit,
     archiveHabit,
+    deleteHabit,
+    updateHabitRecord,
   };
 };

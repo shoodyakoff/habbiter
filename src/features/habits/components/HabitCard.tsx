@@ -13,6 +13,7 @@ interface HabitCardProps {
   completed: boolean;
   onToggle: (id: string) => void;
   onArchive: (id: string) => void;
+  onClick?: (habit: Habit) => void;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
   completed,
   onToggle,
   onArchive,
+  onClick,
   className
 }) => {
   const controls = useAnimation();
@@ -98,6 +100,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
         onDragEnd={handleDragEnd}
         animate={controls}
         whileTap={{ scale: 0.98 }}
+        onClick={() => onClick?.(habit)}
         className={cn(
           "relative h-28 rounded-2xl p-4 flex flex-col justify-between shadow-sm",
           // If habit.color is a hex, we use style. If it's a class name, use class.

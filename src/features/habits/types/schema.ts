@@ -15,6 +15,13 @@ export const HabitSchema = z.object({
   archivedAt: z.string().datetime().optional(),
   deletedAt: z.string().datetime().optional(),
   createdAt: z.string().datetime(),
+  
+  // Tracking configuration
+  trackNotes: z.boolean().default(false),
+  trackWeight: z.boolean().default(false),
+  trackVolume: z.boolean().default(false),
+  trackCount: z.boolean().default(false),
+  trackDuration: z.boolean().default(false),
 });
 
 export const HabitRecordSchema = z.object({
@@ -22,6 +29,13 @@ export const HabitRecordSchema = z.object({
   habitId: z.string().uuid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
   completed: z.boolean(),
+  
+  // Tracking values
+  note: z.string().optional(),
+  valueWeight: z.number().int().optional(),
+  valueVolume: z.number().int().optional(),
+  valueCount: z.number().int().optional(),
+  valueDuration: z.number().int().optional(),
 });
 
 export const HabitListResponseSchema = z.object({
