@@ -38,18 +38,39 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   
-  /* Habit Colors - Updated to "Unusual" shades */
-  --color-habit-yellow: #FDCB6E; /* Sun Flower */
-  --color-habit-orange: #FF9F43; /* Pastel Orange */
-  --color-habit-red: #FF6B6B; /* Pastel Red */
-  --color-habit-pink: #FD79A8;
-  --color-habit-purple: #A29BFE;
-  --color-habit-indigo: #6C5CE7;
-  --color-habit-blue: #0984E3;
-  --color-habit-cyan: #81ECEC;
-  --color-habit-teal: #00CEC9;
-  --color-habit-green: #00B894; /* Mint Leaf */
-  --color-habit-lime: #DFE6E9;
+  /* Habit Colors - Jewel & Nature-inspired (20 colors) */
+  /* Reds & Pinks */
+  --color-habit-crimson: #DC143C;
+  --color-habit-ruby: #E0115F;
+  --color-habit-coral: #FF6F61;
+  --color-habit-rose: #FF6B9D;
+
+  /* Oranges & Yellows */
+  --color-habit-amber: #FFBF00;
+  --color-habit-gold: #FFD700;
+  --color-habit-terracotta: #E2725B;
+  --color-habit-peach: #FFDAB9;
+
+  /* Greens */
+  --color-habit-emerald: #50C878;
+  --color-habit-jade: #00A86B;
+  --color-habit-sage: #8A9A5B;
+  --color-habit-mint: #3EB489;
+
+  /* Blues */
+  --color-habit-sapphire: #0F52BA;
+  --color-habit-turquoise: #30D5C8;
+  --color-habit-teal: #008080;
+  --color-habit-cerulean: #007BA7;
+
+  /* Purples */
+  --color-habit-amethyst: #9966CC;
+  --color-habit-lavender: #967BB6;
+  --color-habit-plum: #8E4585;
+  --color-habit-orchid: #DA70D6;
+
+  /* Telegram Brand */
+  --color-telegram: var(--telegram);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -62,7 +83,8 @@
 
 :root {
   --radius: 0.625rem;
-  
+  --telegram: #24A1DE;
+
   /* Light Mode - Spec Values */
   --background: #FFFFFF;
   --foreground: #111827; /* Text Primary */

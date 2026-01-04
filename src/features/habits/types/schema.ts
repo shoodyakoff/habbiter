@@ -1,12 +1,30 @@
 import { z } from 'zod';
 
+export const HabitColorSchema = z.enum([
+  'crimson', 'ruby', 'coral', 'rose',
+  'amber', 'gold', 'terracotta', 'peach',
+  'emerald', 'jade', 'sage', 'mint',
+  'sapphire', 'turquoise', 'teal', 'cerulean',
+  'amethyst', 'lavender', 'plum', 'orchid'
+]);
+
+export type HabitColor = z.infer<typeof HabitColorSchema>;
+
+export const HABIT_COLORS: readonly HabitColor[] = [
+  'crimson', 'ruby', 'coral', 'rose',
+  'amber', 'gold', 'terracotta', 'peach',
+  'emerald', 'jade', 'sage', 'mint',
+  'sapphire', 'turquoise', 'teal', 'cerulean',
+  'amethyst', 'lavender', 'plum', 'orchid'
+] as const;
+
 export const HabitStatusSchema = z.enum(['active', 'archived', 'deleted']);
 
 export const HabitSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "Name is required").max(100),
   description: z.string().optional(),
-  color: z.string().regex(/^#[0-9A-F]{6}$/i, "Invalid color format").optional(),
+  color: HabitColorSchema.optional(),
   icon: z.string().optional(),
   frequency: z.enum(['daily', 'specific_days', 'custom']).default('daily'),
   repeatDays: z.array(z.number()).optional(),

@@ -19,28 +19,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ICON_CATALOG } from '@/components/shared/Icon/IconCatalog';
+import { HABIT_COLORS, HabitColorSchema } from '@/features/habits/types/schema';
 import { cn } from '@/lib/utils';
 import { Loader2, AlertTriangle, Check } from 'lucide-react';
-
-const COLORS = [
-  '#EF4444', // Red
-  '#F97316', // Orange
-  '#F59E0B', // Amber
-  '#10B981', // Green
-  '#14B8A6', // Teal
-  '#3B82F6', // Blue
-  '#6366F1', // Indigo
-  '#8B5CF6', // Violet
-  '#EC4899', // Pink
-  '#6B7280', // Gray
-];
 
 const createHabitSchema = z.object({
   name: z.string().min(1, 'Название обязательно').max(100),
   description: z.string().optional(),
-  color: z.string().optional(),
+  color: HabitColorSchema.optional(),
   icon: z.string().optional(),
-  
+
   // Tracking
   trackNotes: z.boolean().default(false),
   trackWeight: z.boolean().default(false),
@@ -67,8 +55,8 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
     defaultValues: {
       name: initialValues?.name || '',
       description: initialValues?.description || '',
-      color: initialValues?.color || COLORS[6], // Indigo default
-      icon: initialValues?.icon || 'check',
+      color: initialValues?.color || 'sapphire', // Sapphire default
+      icon: initialValues?.icon || 'target',
       trackNotes: initialValues?.trackNotes || false,
       trackWeight: initialValues?.trackWeight || false,
       trackVolume: initialValues?.trackVolume || false,
@@ -278,19 +266,19 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
             <FormItem>
               <FormLabel>Цвет</FormLabel>
               <FormControl>
-                <div className="flex flex-wrap gap-3">
-                  {COLORS.map((color) => (
+                <div className="grid grid-cols-5 gap-3">
+                  {HABIT_COLORS.map((colorName) => (
                     <button
-                      key={color}
+                      key={colorName}
                       type="button"
                       className={cn(
                         "w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center",
-                        field.value === color ? "border-foreground scale-110" : "border-transparent"
+                        field.value === colorName ? "border-foreground scale-110" : "border-transparent"
                       )}
-                      style={{ backgroundColor: color }}
-                      onClick={() => field.onChange(color)}
+                      style={{ backgroundColor: `var(--color-habit-${colorName})` }}
+                      onClick={() => field.onChange(colorName)}
                     >
-                      {field.value === color && <Check className="text-white" strokeWidth={3} />}
+                      {field.value === colorName && <Check className="text-white" strokeWidth={3} />}
                     </button>
                   ))}
                 </div>
@@ -313,10 +301,10 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
                       key={name}
                       type="button"
                       className={cn(
-                        "flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all",
+                        "flex items-center justify-center w-12 h-12 rounded-xl transition-all",
                         field.value === name 
-                          ? "border-primary bg-primary/10 text-primary" 
-                          : "border-border bg-card text-muted-foreground hover:bg-muted"
+                          ? "bg-primary/10 text-primary" 
+                          : "bg-card text-muted-foreground hover:bg-muted"
                       )}
                       onClick={() => field.onChange(name)}
                     >

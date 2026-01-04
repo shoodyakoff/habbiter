@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Habit } from '@/features/habits/types/schema';
 import { getIcon } from '@/components/shared/Icon/IconCatalog';
 import { triggerHaptic } from '@/lib/haptic';
+import { getTextColorForHabit, getIconColorForHabit } from '@/lib/colors';
 
 interface HabitCardProps {
   habit: Habit;
@@ -28,7 +29,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
   const controls = useAnimation();
   const Icon = getIcon(habit.icon || 'check');
   const iconElement = React.createElement(Icon, { size: 24, weight: 'fill' });
-  
+
   // Swipe logic
   const handleDragEnd = async (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x < -100) {
@@ -46,35 +47,17 @@ export const HabitCard: React.FC<HabitCardProps> = ({
     }
   };
 
-  // Determine text color based on background brightness (simplified)
-  // For now, assume habit colors are "bright" enough for black text or dark enough for white?
-  // Spec says: "If background light -> black icon/text".
-  // Most habit colors (Yellow, Orange, Lime, Cyan) are light.
-  // Red, Purple, Indigo, Blue, Green, Teal might be dark.
-  // For MVP, let's use a helper or simple logic. 
-  // Let's assume white text for darker colors and black for lighter.
-  // List of "light" colors: yellow, orange, lime, cyan, teal.
-  // Others: white text.
-  
-  // Actually, let's just stick to a safe default (Dark text on light cards? No, spec says "Color of habit").
-  // Spec: "Background: Habit Color".
-  // Spec: "Text: Black on light, White on dark".
-  
-  // Map color names to whether they are light.
-  const isLightColor = ['#FCD34D', '#FB923C', '#84CC16', '#06B6D4', '#14B8A6'].includes(habit.color || '');
-  // Since we use hex in DB but mapped to variables, this is tricky if we don't know the exact hex or name.
-  // The schema says `color` is hex.
-  // Let's assume standard Tailwind colors mapped.
-  
-  const textColorClass = isLightColor ? 'text-black' : 'text-white';
-  const iconColorClass = isLightColor ? 'text-black' : 'text-white';
-  
+  // Determine text and icon colors based on background luminance (WCAG 2.0)
+  const textColorClass = getTextColorForHabit(habit.color || 'sapphire');
+  const iconColorHex = getIconColorForHabit(habit.color || 'sapphire');
+  const isLightBg = textColorClass === 'text-black';
+
   // Checkbox variants
   const checkboxVariants = {
     unchecked: { scale: 1, backgroundColor: 'transparent' },
-    checked: { scale: 1, backgroundColor: isLightColor ? '#000' : '#fff' }
+    checked: { scale: 1, backgroundColor: iconColorHex }
   };
-  
+
   const checkmarkVariants = {
     unchecked: { pathLength: 0, opacity: 0 },
     checked: { pathLength: 1, opacity: 1 }
@@ -121,14 +104,14 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           // If habit.color is a hex, we use style. If it's a class name, use class.
           // Schema says Hex.
         )}
-        style={{ backgroundColor: habit.color || '#6366F1' }}
+        style={{ backgroundColor: `var(--color-habit-${habit.color || 'sapphire'})` }}
       >
         {/* Header: Icon + Checkbox */}
         <div className="flex justify-between items-start">
-          <div className={cn("p-0", iconColorClass)}>
+          <div className={cn("p-0", textColorClass)}>
             {iconElement}
           </div>
-          
+
           <motion.button
             onClick={(e) => {
               e.stopPropagation();
@@ -140,11 +123,11 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             variants={checkboxVariants}
             className={cn(
               "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors",
-              isLightColor ? "border-black/20" : "border-white/40"
+              isLightBg ? "border-black/20" : "border-white/40"
             )}
           >
             <motion.div variants={checkmarkVariants} transition={{ duration: 0.2 }}>
-              <Check size={16} weight="bold" className={isLightColor ? "text-white" : "text-black"} />
+              <Check size={16} weight="bold" className={isLightBg ? "text-white" : "text-black"} />
             </motion.div>
           </motion.button>
         </div>
@@ -165,7 +148,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
               "inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-md bg-black/10 backdrop-blur-sm",
               textColorClass
             )}>
-              <Flame size={14} weight="fill" className={isLightColor ? "text-red-600" : "text-orange-300"} />
+              <Flame size={14} weight="fill" className={isLightBg ? "text-red-600" : "text-orange-300"} />
               <span className="text-xs font-medium">{habit.streak} дн</span>
             </div>
           )}

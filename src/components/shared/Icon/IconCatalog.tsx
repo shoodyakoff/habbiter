@@ -1,38 +1,62 @@
 import {
-  Barbell,
-  Book,
-  Drop,
-  Moon,
-  Sun,
-  Laptop,
-  Leaf,
-  Check,
-  Coffee,
-  Heart,
-  Briefcase,
-  Money,
-  MusicNotes,
-  PaintBrush,
+  BarbellIcon,        // Спорт/Фитнес
+  BookIcon,           // Чтение
+  BookOpenIcon,       // Обучение
+  BowlFoodIcon,       // Питание
+  BrainIcon,          // Медитация/Мышление
+  CoffeeIcon,         // Кофе/Напитки
+  DropIcon,           // Вода
+  EyeIcon,            // Зрение/Забота о себе
+  FirstAidIcon,       // Здоровье
+  FlameIcon,          // Streak/Энергия
+  GraduationCapIcon,  // Образование
+  HeadphonesIcon,     // Музыка/Подкасты
+  HeartIcon,          // Любовь/Отношения
+  LeafIcon,           // Экология/Природа
+  LightningIcon,      // Энергия/Продуктивность
+  MoonIcon,           // Сон
+  MusicNoteIcon,      // Музыка
+  PaintBrushIcon,     // Творчество
+  PillIcon,           // Лекарства/Витамины
+  PlantIcon,          // Растения/Уход
+  PersonSimpleRunIcon,// Бег/Кардио
+  ShowerIcon,         // Гигиена
+  SunIcon,            // Утро/Витамин D
+  TargetIcon,         // Цели
+  YinYangIcon,        // Баланс/Йога
   Icon
 } from '@phosphor-icons/react';
 
 export const ICON_CATALOG: Record<string, Icon> = {
-  barbell: Barbell,
-  book: Book,
-  drop: Drop,
-  moon: Moon,
-  sun: Sun,
-  laptop: Laptop,
-  leaf: Leaf,
-  check: Check,
-  coffee: Coffee,
-  heart: Heart,
-  briefcase: Briefcase,
-  money: Money,
-  music: MusicNotes,
-  art: PaintBrush,
+  barbell: BarbellIcon,
+  book: BookIcon,
+  bookOpen: BookOpenIcon,
+  bowlFood: BowlFoodIcon,
+  brain: BrainIcon,
+  coffee: CoffeeIcon,
+  drop: DropIcon,
+  eye: EyeIcon,
+  firstAid: FirstAidIcon,
+  flame: FlameIcon,
+  graduationCap: GraduationCapIcon,
+  headphones: HeadphonesIcon,
+  heart: HeartIcon,
+  leaf: LeafIcon,
+  lightning: LightningIcon,
+  moon: MoonIcon,
+  musicNote: MusicNoteIcon,
+  paintBrush: PaintBrushIcon,
+  pill: PillIcon,
+  plant: PlantIcon,
+  running: PersonSimpleRunIcon,
+  shower: ShowerIcon,
+  sun: SunIcon,
+  target: TargetIcon,
+  yinYang: YinYangIcon,
 };
 
-export const getIcon = (name: string): Icon => {
-  return ICON_CATALOG[name] || Check;
-};
+export type IconName = keyof typeof ICON_CATALOG;
+
+export function getIcon(name: string): Icon {
+  return ICON_CATALOG[name] || TargetIcon;
+}

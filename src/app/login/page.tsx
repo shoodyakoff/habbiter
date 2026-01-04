@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Loader2, UserCircle } from 'lucide-react';
@@ -41,14 +41,12 @@ export default function LoginPage() {
   }, [botUsername, supabaseUrl, supabaseAnonKey]);
 
   const [isMiniApp, setIsMiniApp] = useState(false);
+  const authAttempted = useRef(false);
 
   useEffect(() => {
     const handleMiniAppAuth = async (initData: string) => {
-        if (isDevLoginLoading) return;
-        if (!initData) {
-            logger.warn('handleMiniAppAuth called with empty initData');
-            return;
-        }
+        if (authAttempted.current) return;
+        authAttempted.current = true;
         
         setIsDevLoginLoading(true);
         try {
@@ -78,6 +76,7 @@ export default function LoginPage() {
             const errorMessage = e instanceof Error ? e.message : 'Unknown error';
             logger.error('Mini App Auth Error', errorMessage);
             alert('Ошибка входа через Mini App: ' + errorMessage);
+            authAttempted.current = false; // Allow retry on error? Maybe not.
         } finally {
             setIsDevLoginLoading(false);
         }
@@ -103,7 +102,7 @@ export default function LoginPage() {
             }
         }
     }
-  }, [supabaseUrl, router, isDevLoginLoading, supabaseAnonKey]);
+  }, [supabaseUrl, router, supabaseAnonKey]);
 
   const [pollingToken, setPollingToken] = useState<string | null>(null);
 
@@ -282,7 +281,7 @@ export default function LoginPage() {
         ) : (
             <div className="flex flex-col gap-4 w-full">
                 <Button 
-                    className="w-full bg-[#24A1DE] hover:bg-[#208bbf] text-white font-semibold py-6"
+                    className="w-full bg-telegram text-white hover:bg-telegram/90 font-semibold py-6"
                     onClick={startDeepLinkAuth}
                     disabled={isDevLoginLoading || !!pollingToken}
                 >

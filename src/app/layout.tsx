@@ -6,9 +6,10 @@ import { Header } from "@/components/shared/Header";
 import { BottomNav } from "@/components/shared/BottomNav";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Script from "next/script";
 import { DebugConsole } from "@/lib/logger";
+import { initTelegramWebApp } from "@/lib/telegram";
 
 const onest = Onest({
   variable: "--font-onest",

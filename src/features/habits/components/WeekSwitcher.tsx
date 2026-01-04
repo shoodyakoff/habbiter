@@ -11,10 +11,11 @@ import { ru } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button';
 
 interface DayProgress {
   date: string;
-  status: 'complete' | 'partial' | 'low' | 'empty';
+  status: 'complete' | 'partial' | 'low' | 'empty' | 'failed';
 }
 
 interface WeekSwitcherProps {
@@ -55,9 +56,6 @@ export const WeekSwitcher: React.FC<WeekSwitcherProps> = ({
   };
 
   const handleNext = () => {
-    // Prevent going into future if desired, but typically we allow navigating to see future plans?
-    // User requirement: "calendar with navigation inside the week".
-    // Usually we don't block navigation, just selection.
     if (viewMode === 'week') {
       setViewDate(prev => addWeeks(prev, 1));
     } else {
@@ -80,6 +78,14 @@ export const WeekSwitcher: React.FC<WeekSwitcherProps> = ({
     return `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`;
   }, [viewDate]);
 
+  const statusStyles = {
+    complete: 'bg-green-500',
+    partial: 'bg-yellow-500',
+    low: 'bg-orange-500',
+    failed: 'bg-red-500',
+    empty: 'bg-muted' // or transparent
+  };
+
   return (
     <div className={cn("w-full flex flex-col gap-3 mb-4", className)}>
       {/* Controls */}
@@ -90,45 +96,43 @@ export const WeekSwitcher: React.FC<WeekSwitcherProps> = ({
           </h2>
         </div>
         
-        <div className="flex items-center gap-2">
-          <div className="flex bg-secondary/50 rounded-lg p-1 border border-border/50">
-            <button
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 bg-muted rounded-lg p-1 mr-4">
+            <Button
+              variant={viewMode === 'week' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-7 text-xs"
               onClick={() => setViewMode('week')}
-              className={cn(
-                "px-3 py-1 text-xs font-medium rounded-md transition-all",
-                viewMode === 'week' 
-                  ? "bg-background text-foreground shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
             >
               Неделя
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={viewMode === 'month' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-7 text-xs"
               onClick={() => setViewMode('month')}
-              className={cn(
-                "px-3 py-1 text-xs font-medium rounded-md transition-all",
-                viewMode === 'month' 
-                  ? "bg-background text-foreground shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
             >
               Месяц
-            </button>
+            </Button>
           </div>
           
           <div className="flex items-center gap-1">
-            <button 
+            <Button 
+              variant="ghost" 
+              size="icon-sm" 
+              className="size-7"
               onClick={handlePrev}
-              className="p-1.5 rounded-full hover:bg-secondary/80 text-foreground transition-colors"
             >
-              <CaretLeft size={20} />
-            </button>
-            <button 
+              <CaretLeft size={16} />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon-sm" 
+              className="size-7"
               onClick={handleNext}
-              className="p-1.5 rounded-full hover:bg-secondary/80 text-foreground transition-colors"
             >
-              <CaretRight size={20} />
-            </button>
+              <CaretRight size={16} />
+            </Button>
           </div>
         </div>
       </div>
@@ -173,11 +177,9 @@ export const WeekSwitcher: React.FC<WeekSwitcherProps> = ({
                 
                 {/* Dot Indicator */}
                 {!isFutureDay && (
-                  <span className={cn(
+                  <div className={cn(
                     "mt-1 w-1.5 h-1.5 rounded-full",
-                    status === 'complete' && (isSelected ? "bg-white" : "bg-habit-green"),
-                    status === 'partial' && (isSelected ? "bg-white/80" : "bg-habit-orange"),
-                    status === 'low' && (isSelected ? "bg-white/60" : "bg-habit-red"),
+                    isSelected && status !== 'empty' ? "bg-white" : statusStyles[status],
                     status === 'empty' && "bg-transparent"
                   )} />
                 )}
