@@ -402,12 +402,14 @@ const statusStyles = {
     </span>
   </div>
   <div className="h-2 bg-muted rounded-full overflow-hidden"> {/* было h-3 */}
+    {% raw %}
     <motion.div
       className="h-full bg-primary"
       initial={{ width: 0 }}
       animate={{ width: `${percentage}%` }}
       transition={{ duration: 0.3 }}
     />
+    {% endraw %}
   </div>
 </div>
 ```
@@ -503,6 +505,7 @@ export default function MyHabitsPage() {
 
       <div className="space-y-3">
         {activeHabits.map((habit, index) => (
+          {% raw %}
           <motion.div
             key={habit.id}
             initial={{ opacity: 0, y: 20 }}
@@ -517,6 +520,7 @@ export default function MyHabitsPage() {
             >
               <Icon size={24} weight="fill" className={getTextColorForHabit(habit.color)} />
             </div>
+            {% endraw %}
 
             {/* Content */}
             <div className="flex-1 min-w-0">

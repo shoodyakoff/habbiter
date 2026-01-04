@@ -228,6 +228,7 @@ const handleClick = () => {
 
 **Usage:**
 ```tsx
+{% raw %}
 // ✅ Dynamic style
 <div
   className="rounded-full size-8"
@@ -236,6 +237,7 @@ const handleClick = () => {
 
 // ❌ Hardcoded
 <div style={{ color: '#EF4444' }}>  // NEVER!
+{% endraw %}
 ```
 
 **TypeScript:**

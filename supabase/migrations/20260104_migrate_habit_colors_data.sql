@@ -4,11 +4,17 @@
 
 -- Шаг 1: Создать backup для возможности отката
 CREATE TEMP TABLE IF NOT EXISTS habits_color_backup AS
-SELECT id, color FROM habits WHERE color ~ '^#[0-9A-F]{6}$';
+SELECT id, color FROM habits WHERE color NOT IN (
+    'crimson', 'ruby', 'coral', 'rose',
+    'amber', 'gold', 'terracotta', 'peach',
+    'emerald', 'jade', 'sage', 'mint',
+    'sapphire', 'turquoise', 'teal', 'cerulean',
+    'amethyst', 'lavender', 'plum', 'orchid'
+);
 
 -- Шаг 2: Обновить записи (маппинг старых hex-цветов на новые названия)
 UPDATE habits
-SET color = CASE color
+SET color = CASE UPPER(color)
   WHEN '#EF4444' THEN 'crimson'      -- Red → crimson
   WHEN '#F97316' THEN 'coral'        -- Orange → coral
   WHEN '#F59E0B' THEN 'gold'         -- Amber → gold
@@ -19,29 +25,41 @@ SET color = CASE color
   WHEN '#8B5CF6' THEN 'plum'         -- Violet → plum
   WHEN '#EC4899' THEN 'rose'         -- Pink → rose
   WHEN '#6B7280' THEN 'sage'         -- Gray → sage
-  ELSE 'sapphire'                    -- Fallback для незнакомых цветов
+  ELSE 'sapphire'                    -- Fallback для всех остальных невалидных значений
 END
-WHERE color ~ '^#[0-9A-F]{6}$';
+WHERE color NOT IN (
+    'crimson', 'ruby', 'coral', 'rose',
+    'amber', 'gold', 'terracotta', 'peach',
+    'emerald', 'jade', 'sage', 'mint',
+    'sapphire', 'turquoise', 'teal', 'cerulean',
+    'amethyst', 'lavender', 'plum', 'orchid'
+);
 
 -- Шаг 3: Проверка успешности миграции
 DO $$
 DECLARE
-  hex_count INTEGER;
+  invalid_count INTEGER;
   updated_count INTEGER;
 BEGIN
-  -- Проверяем, остались ли hex-цвета
-  SELECT COUNT(*) INTO hex_count
+  -- Проверяем, остались ли невалидные цвета
+  SELECT COUNT(*) INTO invalid_count
   FROM habits
-  WHERE color ~ '^#[0-9A-F]{6}$';
+  WHERE color NOT IN (
+    'crimson', 'ruby', 'coral', 'rose',
+    'amber', 'gold', 'terracotta', 'peach',
+    'emerald', 'jade', 'sage', 'mint',
+    'sapphire', 'turquoise', 'teal', 'cerulean',
+    'amethyst', 'lavender', 'plum', 'orchid'
+  );
 
   -- Считаем сколько записей обновили
   SELECT COUNT(*) INTO updated_count
   FROM habits_color_backup;
 
-  IF hex_count > 0 THEN
-    RAISE EXCEPTION 'Migration failed: % habits still have hex colors', hex_count;
+  IF invalid_count > 0 THEN
+    RAISE EXCEPTION 'Migration failed: % habits still have invalid colors', invalid_count;
   END IF;
 
-  RAISE NOTICE 'Migration successful: % habits converted from hex to color names', updated_count;
+  RAISE NOTICE 'Migration successful: % habits converted', updated_count;
   RAISE NOTICE 'All habits now use color names (crimson, ruby, coral, etc.)';
 END $$;

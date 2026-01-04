@@ -76,7 +76,7 @@ export default function MyHabitsPage() {
                     <Button
                         variant="ghost"
                         size="icon-sm"
-                        onClick={() => router.push(`/habits/${habit.id}/edit`)}
+                        onClick={() => router.push(`/habits/edit?id=${habit.id}`)}
                     >
                         <Pencil size={18} />
                     </Button>

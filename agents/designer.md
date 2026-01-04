@@ -211,29 +211,35 @@ ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1)
 
 1. **Habit Card Toggle:**
 ```tsx
+{% raw %}
 <motion.div
   whileTap={{ scale: 0.98 }}
   transition={{ type: "spring", stiffness: 400, damping: 17 }}
 >
+{% endraw %}
 ```
 
 2. **List Item Entrance (Stagger):**
 ```tsx
+{% raw %}
 <motion.div
   initial={{ opacity: 0, y: 20 }}
   animate={{ opacity: 1, y: 0 }}
   transition={{ delay: index * 0.05 }}
 >
+{% endraw %}
 ```
 
 3. **Swipe Gestures:**
 ```tsx
+{% raw %}
 <motion.div
   drag="x"
   dragConstraints={{ left: 0, right: 0 }}
   dragElastic={{ left: 0.7, right: 0.7 }}
   onDragEnd={handleDragEnd}
 >
+{% endraw %}
 ```
 
 4. **Success Celebration:**
@@ -483,7 +489,7 @@ opacity: 0.05;
 ### ❌ Плохие практики
 
 **Цвета:**
-- Хардкод hex в JSX: `style={{ color: '#6366F1' }}`
+- Хардкод hex в JSX: {% raw %}`style={{ color: '#6366F1' }}`{% endraw %}
 - Использование arbitrary values вместо semantic tokens
 - Игнорирование dark mode
 

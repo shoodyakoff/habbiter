@@ -2,16 +2,16 @@
 
 import { CreateHabitForm } from '@/features/habits/components/CreateHabitForm';
 import { useHabitsQuery } from '@/features/habits/api/useHabits';
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, Suspense } from 'react';
 import { CaretLeft } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 
-export default function EditHabitPage() {
-  const params = useParams();
+function EditHabitContent() {
+  const searchParams = useSearchParams();
+  const habitId = searchParams.get('id');
   const router = useRouter();
-  const habitId = params.id as string;
-
+  
   const { data: habits = [] } = useHabitsQuery();
   const habit = habits.find(h => h.id === habitId);
 
@@ -28,6 +28,10 @@ export default function EditHabitPage() {
       tg.BackButton.offClick();
     };
   }, [router]);
+
+  if (!habitId) {
+    return <div className="p-4">Неверный ID привычки</div>;
+  }
 
   if (!habit) {
     return <div className="p-4">Привычка не найдена</div>;
@@ -52,5 +56,13 @@ export default function EditHabitPage() {
         onSuccess={() => router.push('/my-habits')}
       />
     </div>
+  );
+}
+
+export default function EditHabitPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+      <EditHabitContent />
+    </Suspense>
   );
 }

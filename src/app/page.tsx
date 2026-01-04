@@ -43,7 +43,7 @@ function HomeContent() {
   };
   
   const handleEditHabit = (habit: Habit) => {
-    router.push(`/habits/${habit.id}/edit`);
+    router.push(`/habits/edit?id=${habit.id}`);
     setSelectedHabit(null);
   };
 
