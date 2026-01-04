@@ -122,6 +122,7 @@ import { HABIT_COLORS } from '@/features/habits/types/schema';
       style={{ backgroundColor: `var(--color-habit-${colorName})` }}
       onClick={() => field.onChange(colorName)}
     >
+{% endraw %}
       {field.value === colorName && <Check className="text-white" strokeWidth={3} />}
     </button>
   ))}
