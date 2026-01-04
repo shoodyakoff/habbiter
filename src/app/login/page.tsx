@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger';
 import { motion, Variants } from 'framer-motion';
 import { getTextColorForHabit } from '@/lib/colors';
 import { cn } from '@/lib/utils';
-import { BookOpen, Drop, PersonSimpleRun, Dna } from '@phosphor-icons/react';
+import { BookOpen, Drop, Alien, Dna } from '@phosphor-icons/react';
 
 // Mock Habit Card Component for Login Page
 const MockHabitCard = ({ 
@@ -430,11 +430,17 @@ export default function LoginPage() {
                     className="absolute top-24 left-0 right-0 z-20"
                 >
                     <MockHabitCard 
-                        name="Утренняя пробежка" 
+                        name="Сделать зарядку" 
                         color="teal" 
-                        icon={PersonSimpleRun} 
+                        icon={Alien} 
                         streak={3} 
+                        completed={true}
                     />
+                    <div className="absolute -bottom-16 left-0 right-0 text-center">
+                        <p className="text-xs text-muted-foreground italic leading-relaxed w-full px-4">
+                            «Вы становитесь тем, что повторяете <br/> изо дня в день» — <span className="not-italic">Аристотель</span>
+                        </p>
+                    </div>
                 </motion.div>
             </div>
         </motion.div>
@@ -475,10 +481,6 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-4">
-                <p className="text-sm text-muted-foreground italic leading-relaxed">
-                  «Вы становитесь тем, что повторяете изо дня в день»{"\u00A0"}<span className="text-xs not-italic opacity-70 whitespace-nowrap">— Аристотель</span>
-                </p>
-
                 {process.env.NODE_ENV === 'development' && (
                      <div>
                         <Button 

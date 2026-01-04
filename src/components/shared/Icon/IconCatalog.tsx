@@ -24,10 +24,18 @@ import {
   SunIcon,            // Утро/Витамин D
   TargetIcon,         // Цели
   YinYangIcon,        // Баланс/Йога
+  DesktopIcon,        // Компьютер/Работа
+  CodeIcon,           // Кодинг
+  RobotIcon,          // Технологии/ИИ
+  CpuIcon,            // Железо
   Icon
 } from '@phosphor-icons/react';
 
 export const ICON_CATALOG: Record<string, Icon> = {
+  desktop: DesktopIcon,
+  code: CodeIcon,
+  robot: RobotIcon,
+  cpu: CpuIcon,
   barbell: BarbellIcon,
   book: BookIcon,
   bookOpen: BookOpenIcon,
