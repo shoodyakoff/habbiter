@@ -124,7 +124,6 @@ function HomeContent() {
                     habit={habit}
                     completed={isCompleted}
                     onToggle={handleToggle}
-                    onArchive={handleArchive}
                     onClick={handleCardClick}
                   />
                 </div>

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { motion, PanInfo, useAnimation } from 'framer-motion';
-import { Archive, Check, Flame } from '@phosphor-icons/react';
+import { motion, useAnimation } from 'framer-motion';
+import { Check, Flame } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { Habit } from '@/features/habits/types/schema';
 import { getIcon } from '@/components/shared/Icon/IconCatalog';
@@ -13,7 +13,6 @@ interface HabitCardProps {
   habit: Habit;
   completed: boolean;
   onToggle: (id: string) => void;
-  onArchive: (id: string) => void;
   onClick?: (habit: Habit) => void;
   className?: string;
 }
@@ -22,30 +21,12 @@ export const HabitCard: React.FC<HabitCardProps> = ({
   habit,
   completed,
   onToggle,
-  onArchive,
   onClick,
   className
 }) => {
   const controls = useAnimation();
   const Icon = getIcon(habit.icon || 'check');
   const iconElement = React.createElement(Icon, { size: 24, weight: 'fill' });
-
-  // Swipe logic
-  const handleDragEnd = async (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (info.offset.x < -100) {
-      // Swipe left -> Archive
-      triggerHaptic();
-      onArchive(habit.id);
-    } else if (info.offset.x > 100) {
-      // Swipe right -> Toggle
-      triggerHaptic();
-      onToggle(habit.id);
-      controls.start({ x: 0 });
-    } else {
-      // Reset position
-      controls.start({ x: 0 });
-    }
-  };
 
   // Determine text and icon colors based on background luminance (WCAG 2.0)
   const textColorClass = getTextColorForHabit(habit.color || 'sapphire');
@@ -65,34 +46,30 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
   const hasTrackingParams = habit.trackNotes || habit.trackWeight || habit.trackVolume || habit.trackCount || habit.trackDuration;
 
+  const handleInteraction = () => {
+    if (hasTrackingParams) {
+      if (completed) {
+        // If completed, toggle off (deactivate)
+        triggerHaptic();
+        onToggle(habit.id);
+      } else {
+        // If incomplete, open popup
+        onClick?.(habit);
+      }
+    } else {
+      // Standard toggle
+      triggerHaptic();
+      onToggle(habit.id);
+    }
+  };
+
   return (
     <div className={cn("relative group touch-pan-y", className)}>
-      {/* Background Action (Archive - Left) */}
-      <div className="absolute inset-y-0 right-0 w-1/2 bg-red-500/80 rounded-r-2xl flex items-center justify-end px-6 z-0">
-        <Archive size={24} color="white" />
-      </div>
-
-      {/* Background Action (Check - Right) */}
-      <div className="absolute inset-y-0 left-0 w-1/2 bg-green-500/80 rounded-l-2xl flex items-center justify-start px-6 z-0">
-        <Check size={24} color="white" />
-      </div>
-
       {/* Card Content */}
       <motion.div
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={{ left: 0.7, right: 0.7 }}
-        onDragEnd={handleDragEnd}
         animate={controls}
         whileTap={{ scale: 0.98 }}
-        onClick={() => {
-          if (hasTrackingParams) {
-            onClick?.(habit);
-          } else {
-             triggerHaptic();
-             onToggle(habit.id);
-          }
-        }}
+        onClick={handleInteraction}
         className={cn(
           "relative h-28 rounded-2xl p-4 flex flex-col justify-between shadow-sm cursor-pointer z-10",
           // Fallback background if CSS variable fails
@@ -109,8 +86,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           <motion.button
             onClick={(e) => {
               e.stopPropagation();
-              triggerHaptic();
-              onToggle(habit.id);
+              handleInteraction();
             }}
             initial={completed ? "checked" : "unchecked"}
             animate={completed ? "checked" : "unchecked"}
