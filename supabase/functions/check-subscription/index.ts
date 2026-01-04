@@ -54,11 +54,19 @@ serve(async (req: Request) => {
     // Check subscription
     const isSubscribed = await checkChannelSubscription(String(userData.telegram_id), TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID)
 
-    // Update user status
+    console.log(`User ${userData.telegram_id} subscription status: ${isSubscribed}`);
+
+    // Update user status in public table
     await adminSupabase.from('users').update({
         is_subscribed: isSubscribed,
         subscription_checked_at: new Date().toISOString()
     }).eq('id', user.id)
+
+    // Update user app_metadata in Auth (so it's available in JWT)
+    await adminSupabase.auth.admin.updateUserById(
+      user.id,
+      { app_metadata: { is_subscribed: isSubscribed } }
+    )
     
     // Log check
     await adminSupabase.from('subscription_checks').insert({
@@ -75,18 +83,31 @@ serve(async (req: Request) => {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Check subscription error:', errorMessage);
     return new Response(JSON.stringify({ error: errorMessage }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
 
 async function checkChannelSubscription(userId: string, token: string, channelId: string) {
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/getChatMember?chat_id=${channelId}&user_id=${userId}`)
+    // Ensure channelId starts with @ if it's a username (not a number)
+    let formattedChannelId = channelId.trim();
+    if (!formattedChannelId.startsWith('@') && !formattedChannelId.startsWith('-100') && isNaN(Number(formattedChannelId))) {
+        formattedChannelId = `@${formattedChannelId}`;
+    }
+
+    const res = await fetch(`https://api.telegram.org/bot${token}/getChatMember?chat_id=${formattedChannelId}&user_id=${userId}`)
     const data = await res.json()
-    if (!data.ok) return false
+    
+    if (!data.ok) {
+        console.error('Telegram API error:', JSON.stringify(data));
+        return false
+    }
+    
     const status = data.result.status
-    return ['creator', 'administrator', 'member'].includes(status)
-  } catch {
+    return ['creator', 'administrator', 'member', 'restricted'].includes(status)
+  } catch (e) {
+    console.error('Check subscription network error:', e);
     return false
   }
 }

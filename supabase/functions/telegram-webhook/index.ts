@@ -111,6 +111,7 @@ async function authorizeUser(supabase: any, tokenData: any, userId: number, mess
     }
 
     if (authUserId) {
+            // Update public table
             await supabase.from('users').upsert({
             id: authUserId,
             telegram_id: userId,
@@ -119,6 +120,12 @@ async function authorizeUser(supabase: any, tokenData: any, userId: number, mess
             is_subscribed: isSubscribed,
             last_login_at: new Date().toISOString()
             }, { onConflict: 'telegram_id' })
+
+            // Update app_metadata for JWT
+            await supabase.auth.admin.updateUserById(
+                authUserId,
+                { app_metadata: { is_subscribed: isSubscribed } }
+            )
     }
     
     // Send success message

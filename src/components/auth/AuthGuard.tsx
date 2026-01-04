@@ -32,6 +32,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       // Check subscription status
       const checkSub = async () => {
         if (checkInProgress.current) return;
+        
+        // 0. Check JWT metadata (INSTANT CHECK)
+        // This is the fastest way - no DB call, no API call
+        if (user.app_metadata?.is_subscribed === true) {
+            console.log('[AuthGuard] Subscribed via JWT metadata');
+            setIsCheckingSubscription(false);
+            return;
+        }
+
         checkInProgress.current = true;
 
         try {
@@ -57,33 +66,35 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             }
 
             const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/check-subscription`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            const edgeData = await res.json();
-            
-            if (edgeData.isSubscribed) {
-                // User is actually subscribed!
-                setIsCheckingSubscription(false);
-            } else {
-                // Truly not subscribed
-                if (pathname !== '/subscribe') {
-                    router.push('/subscribe');
-                }
-                setIsCheckingSubscription(false);
-            }
-        } catch (error) {
-            console.error('AuthGuard check error', error);
-            if (pathname !== '/subscribe') {
-                router.push('/subscribe');
-            }
-            setIsCheckingSubscription(false);
-        } finally {
-            checkInProgress.current = false;
-        }
+                 method: 'POST',
+                 headers: {
+                     'Authorization': `Bearer ${token}`
+                 }
+             });
+             
+             const edgeData = await res.json();
+             console.log('[AuthGuard] Check result:', edgeData);
+             
+             if (edgeData.isSubscribed) {
+                 // User is actually subscribed!
+                 setIsCheckingSubscription(false);
+             } else {
+                 // Truly not subscribed
+                 console.warn('[AuthGuard] Subscription check failed', edgeData);
+                 if (pathname !== '/subscribe') {
+                     router.push('/subscribe');
+                 }
+                 setIsCheckingSubscription(false);
+             }
+         } catch (error) {
+             console.error('[AuthGuard] Check error', error);
+             if (pathname !== '/subscribe') {
+                 router.push('/subscribe');
+             }
+             setIsCheckingSubscription(false);
+         } finally {
+             checkInProgress.current = false;
+         }
       };
       
       checkSub();
