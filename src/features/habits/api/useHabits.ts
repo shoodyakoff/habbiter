@@ -4,6 +4,7 @@ import { Habit, HabitRecord } from '../types/schema';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import confetti from 'canvas-confetti';
 import { haptic } from '@/lib/haptic';
+import { calculateStreak } from '../utils/streak';
 
 // Keys
 export const habitKeys = {
@@ -23,34 +24,35 @@ export const useHabitsQuery = () => {
     queryFn: async () => {
       if (!user) return [];
       
-      const { data, error } = await supabase
+      const { data: habits, error: habitsError } = await supabase
         .from('habits')
         .select('*')
         .order('created_at', { ascending: false });
         
-      if (error) throw error;
+      if (habitsError) throw habitsError;
+
+      // Fetch all records for streak calculation
+      const { data: records, error: recordsError } = await supabase
+        .from('habit_records')
+        .select('*');
+        
+      if (recordsError) throw recordsError;
+      
+      // Map records for streak calculation
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const allRecords = (records || []).map((r: any) => ({
+        id: r.id,
+        habitId: r.habit_id,
+        date: r.date,
+        completed: r.completed
+      }));
       
       // Calculate streaks
-      const habitsWithStreaks = await Promise.all(
-        data.map(async (h: any) => {
-          // RPC call for streak
-          // Note: If RPC function doesn't exist yet, this will fail.
-          // For now, I'll try-catch it or check if I should add it.
-          // The instruction says "Backend: Create function... Frontend: Call RPC".
-          // Since I cannot migrate DB, this might break.
-          // I'll add a fallback.
-          let streak = 0;
-          try {
-             const { data: streakData, error: streakError } = await supabase.rpc('calculate_habit_streak', {
-               p_habit_id: h.id,
-               p_user_id: user.id
-             });
-             if (!streakError) streak = streakData;
-          } catch (e) {
-             console.warn('Streak calculation failed', e);
-          }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const habitsWithStreaks = habits.map((h: any) => {
+        const streak = calculateStreak(allRecords, h.id);
 
-          return {
+        return {
             id: h.id,
             name: h.name,
             description: h.description,
@@ -68,9 +70,8 @@ export const useHabitsQuery = () => {
             trackVolume: h.track_volume,
             trackCount: h.track_count,
             trackDuration: h.track_duration,
-          };
-        })
-      );
+        };
+      });
 
       return habitsWithStreaks as Habit[];
     },

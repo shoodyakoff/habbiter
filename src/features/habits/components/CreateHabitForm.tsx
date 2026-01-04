@@ -207,9 +207,15 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
                     control={form.control}
                     name={item.name}
                     render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between p-4 space-y-0 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => field.onChange(!field.value)}>
-                            <div className="space-y-1">
-                                <FormLabel className="text-base font-medium cursor-pointer">
+                        <FormItem 
+                          className="flex flex-row items-center justify-between p-4 space-y-0 hover:bg-muted/30 transition-colors cursor-pointer" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            field.onChange(!field.value);
+                          }}
+                        >
+                            <div className="space-y-1 pointer-events-none">
+                                <FormLabel className="text-base font-medium">
                                     {item.label}
                                 </FormLabel>
                             </div>
@@ -217,7 +223,7 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
                                 <Checkbox
                                     checked={!!field.value}
                                     onCheckedChange={field.onChange}
-                                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary w-6 h-6 rounded-full border-2"
+                                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary w-6 h-6 rounded-full border-2 pointer-events-none"
                                 />
                             </FormControl>
                         </FormItem>

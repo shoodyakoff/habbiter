@@ -102,8 +102,8 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           </motion.button>
         </div>
 
-        {/* Footer: Name + Streak */}
-        <div className="mt-auto">
+        {/* Footer: Name */}
+        <div className="mt-auto pr-8">
           <h3 className={cn("font-semibold text-base leading-tight line-clamp-2", textColorClass)}>
             {habit.name}
           </h3>
@@ -112,17 +112,18 @@ export const HabitCard: React.FC<HabitCardProps> = ({
               {habit.description}
             </p>
           )}
-          
-          {habit.streak > 0 && (
-            <div className={cn(
-              "inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-md bg-black/10 backdrop-blur-sm",
-              textColorClass
-            )}>
-              <Flame size={14} weight="fill" className={isLightBg ? "text-red-600" : "text-orange-300"} />
-              <span className="text-xs font-medium">{habit.streak} дн</span>
-            </div>
-          )}
         </div>
+        
+        {/* Streak Badge: Absolute Bottom Right */}
+        {habit.streak > 0 && (
+          <div className={cn(
+            "absolute bottom-4 right-4 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-black/10 backdrop-blur-sm",
+            textColorClass
+          )}>
+            <Flame size={14} weight="fill" className={isLightBg ? "text-red-600" : "text-orange-300"} />
+            <span className="text-xs font-medium">{habit.streak} дн</span>
+          </div>
+        )}
       </motion.div>
     </div>
   );
