@@ -140,7 +140,9 @@ export default function LoginPage() {
           setPollingToken(data.token);
           
           const botLink = `https://t.me/${botUsername}?start=auth_${data.token}`;
-          window.location.href = botLink;
+          
+          // Open in new tab
+          window.open(botLink, '_blank');
       } catch (e: unknown) {
           const errorMessage = e instanceof Error ? e.message : 'Unknown error';
           logger.error('Error starting auth', errorMessage);
