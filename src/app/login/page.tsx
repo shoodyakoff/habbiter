@@ -3,11 +3,77 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { Loader2, UserCircle } from 'lucide-react';
+import { Loader2, UserCircle, Send, Check, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
-
 import { logger } from '@/lib/logger';
+import { motion, Variants } from 'framer-motion';
+import { getTextColorForHabit } from '@/lib/colors';
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { BookOpen, Drop, PersonSimpleRun } from '@phosphor-icons/react';
+
+// Mock Habit Card Component for Login Page
+const MockHabitCard = ({ 
+    name, 
+    color, 
+    icon: Icon, 
+    streak, 
+    completed = false,
+    className 
+}: { 
+    name: string; 
+    color: string; 
+    icon: React.ElementType; 
+    streak: number; 
+    completed?: boolean;
+    className?: string;
+}) => {
+    const textColorClass = getTextColorForHabit(color);
+    const isLightBg = textColorClass === 'text-black';
+
+    return (
+        <div 
+            className={cn(
+                "relative h-28 w-full rounded-2xl p-4 flex flex-col justify-between shadow-sm",
+                className
+            )}
+            style={{ backgroundColor: `var(--color-habit-${color})` }}
+        >
+            {/* Header */}
+            <div className="flex justify-between items-start">
+                <div className={cn("p-0", textColorClass)}>
+                    <Icon size={24} strokeWidth={2.5} />
+                </div>
+
+                <div className={cn(
+                    "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors",
+                    isLightBg ? "border-black/20" : "border-white/40",
+                    completed && (isLightBg ? "bg-black border-black" : "bg-white border-white")
+                )}>
+                     {completed && <Check size={16} strokeWidth={4} className={isLightBg ? "text-white" : "text-black"} />}
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-auto text-left">
+                <h3 className={cn("font-semibold text-base leading-tight line-clamp-2", textColorClass)}>
+                    {name}
+                </h3>
+                
+                {streak > 0 && (
+                    <div className={cn(
+                        "inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-md bg-black/10 backdrop-blur-sm",
+                        textColorClass
+                    )}>
+                        <Flame size={14} fill="currentColor" className={isLightBg ? "text-red-600" : "text-orange-300"} />
+                        <span className="text-xs font-medium">{streak} дн</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -184,11 +250,6 @@ export default function LoginPage() {
   const handleDevLogin = async () => {
     setIsDevLoginLoading(true);
     try {
-        // Unique email to avoid conflicts if needed, or just standard one
-        // Actually, let's stick to one dev user. 
-        // The error "Email address is invalid" is weird for 'test@example.com'.
-        // It might be a Supabase config issue (e.g. email provider disabled).
-        // Let's try a more real-looking email just in case.
         const devEmail = 'habbiter_dev_user@gmail.com'; 
         
         const { error } = await supabase.auth.signInWithPassword({
@@ -198,7 +259,6 @@ export default function LoginPage() {
         
         if (error) {
             console.log('Login failed, trying signup:', error.message);
-            // Try to sign up if login fails
             const { error: signUpError } = await supabase.auth.signUp({
                 email: devEmail,
                 password: 'password123',
@@ -216,12 +276,11 @@ export default function LoginPage() {
             if (signUpError) {
                 alert('Ошибка входа (Dev): ' + signUpError.message);
             } else {
-                // Check if session was created immediately (if email confirm is off)
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session) {
                     router.push('/');
                 } else {
-                    alert('Тестовый пользователь создан! Если у вас включено подтверждение почты в Supabase, отключите его в Authentication -> Providers -> Email -> Confirm email.');
+                    alert('Тестовый пользователь создан!');
                 }
             }
         } else {
@@ -256,89 +315,200 @@ export default function LoginPage() {
     );
   }
 
+  // Animation variants
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: { 
+        opacity: 1,
+        transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  };
+
+  const cardVariants: Variants = {
+    float: (i: number) => ({
+        y: [0, -10, 0],
+        transition: {
+            duration: 3 + i,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: i * 0.5
+        }
+    })
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 text-center">
-      <div className="mb-8">
-        <h1 
-            onClick={handleLogoClick}
-            className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent cursor-pointer select-none"
-        >
-          Habbiter
-        </h1>
-        <p className="text-muted-foreground">
-          Твой путь к лучшей версии себя
-        </p>
+    <div className="relative h-screen w-full overflow-hidden bg-background text-foreground flex flex-col">
+      {/* Ambient Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+         <motion.div 
+            animate={{ 
+                scale: [1, 1.2, 1],
+                rotate: [0, 10, 0],
+                opacity: [0.3, 0.5, 0.3] 
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-primary/10 blur-[100px]" 
+         />
+         <motion.div 
+            animate={{ 
+                scale: [1, 1.1, 1],
+                rotate: [0, -10, 0],
+                opacity: [0.3, 0.5, 0.3] 
+            }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute bottom-[-10%] right-[-20%] w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[100px]" 
+         />
       </div>
 
-      <div className="bg-card border border-border rounded-2xl p-8 shadow-sm w-full max-w-sm">
-        <h2 className="text-xl font-semibold mb-6">Вход</h2>
-        
-        {isMiniApp ? (
-             <div className="flex flex-col items-center justify-center py-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-                <p className="text-sm text-muted-foreground">Авторизация...</p>
-             </div>
-        ) : (
-            <div className="flex flex-col gap-4 w-full">
-                <Button 
-                    className="w-full bg-telegram text-white hover:bg-telegram/90 font-semibold py-6"
-                    onClick={startDeepLinkAuth}
-                    disabled={isDevLoginLoading || !!pollingToken}
+      {/* Content */}
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10 flex-1 flex flex-col items-center justify-between p-6 pb-8 text-center h-full"
+      >
+        {/* Spacer for top alignment balance */}
+        <div className="flex-none h-4" />
+
+        {/* Hero Section */}
+        <motion.div variants={itemVariants} className="flex-none flex flex-row items-center justify-center gap-4">
+            <div className="relative w-[50px] h-[50px]">
+                <Image 
+                    src="logo.png" 
+                    alt="Habbiter Logo" 
+                    width={50} 
+                    height={50} 
+                    className="object-contain"
+                />
+            </div>
+            <h1 
+                onClick={handleLogoClick}
+                className="text-4xl font-bold tracking-tight"
+            >
+              Habbiter
+            </h1>
+        </motion.div>
+
+        {/* Visual Elements - Floating Cards */}
+        {/* Using flex-1 to allow this area to grow/shrink but keeping it centered */}
+        <motion.div variants={itemVariants} className="flex-1 w-full max-w-[320px] relative flex items-center justify-center min-h-[240px]">
+             <div className="relative w-full h-[240px]">
+                {/* Card 1 - Back */}
+                <motion.div 
+                    custom={0}
+                    variants={cardVariants}
+                    animate="float"
+                    className="absolute top-0 left-8 right-8 z-0"
                 >
-                    {pollingToken ? (
-                        <div className="flex items-center">
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                            Ожидание подтверждения...
-                        </div>
-                    ) : (
-                        "Войти через Telegram"
+                    <MockHabitCard 
+                        name="Читать 30 минут" 
+                        color="amber" 
+                        icon={BookOpen} 
+                        streak={12} 
+                    />
+                </motion.div>
+
+                {/* Card 2 - Middle */}
+                <motion.div 
+                    custom={1}
+                    variants={cardVariants}
+                    animate="float"
+                    className="absolute top-12 left-4 right-4 z-10"
+                >
+                    <MockHabitCard 
+                        name="Пить воду" 
+                        color="sapphire" 
+                        icon={Drop} 
+                        streak={0} 
+                        completed={true}
+                    />
+                </motion.div>
+
+                {/* Card 3 - Front */}
+                <motion.div 
+                    custom={2}
+                    variants={cardVariants}
+                    animate="float"
+                    className="absolute top-24 left-0 right-0 z-20"
+                >
+                    <MockHabitCard 
+                        name="Утренняя пробежка" 
+                        color="emerald" 
+                        icon={PersonSimpleRun} 
+                        streak={3} 
+                    />
+                </motion.div>
+            </div>
+        </motion.div>
+
+        {/* Bottom Section: Action + Quote + Dev */}
+        <motion.div variants={itemVariants} className="flex-none w-full max-w-xs space-y-6">
+            {isMiniApp ? (
+                 <div className="flex flex-col items-center justify-center py-4 bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary mb-3" />
+                    <p className="text-sm font-medium">Вход через Telegram...</p>
+                 </div>
+            ) : (
+                <div className="space-y-4">
+                    <Button 
+                        className="w-full h-14 text-lg bg-[#24A1DE] hover:bg-[#24A1DE]/90 text-white rounded-2xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                        onClick={startDeepLinkAuth}
+                        disabled={isDevLoginLoading || !!pollingToken}
+                    >
+                        {pollingToken ? (
+                            <div className="flex items-center gap-2">
+                                <Loader2 className="h-5 w-5 animate-spin" /> 
+                                <span>Ожидание...</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <Send className="h-5 w-5" />
+                                <span>Войти через Telegram</span>
+                            </div>
+                        )}
+                    </Button>
+                    
+                    {pollingToken && (
+                        <p className="text-xs text-muted-foreground animate-pulse">
+                            Перейдите в Telegram бот для подтверждения
+                        </p>
                     )}
-                </Button>
-                
-                {pollingToken && (
-                    <p className="text-xs text-muted-foreground animate-pulse">
-                        Мы открыли Telegram. Нажмите &quot;Запустить&quot; в боте.
-                    </p>
+                </div>
+            )}
+
+            <div className="space-y-4">
+                <p className="text-sm text-muted-foreground italic leading-relaxed">
+                  «Вы становитесь тем, что повторяете изо дня в день»{"\u00A0"}<span className="text-xs not-italic opacity-70 whitespace-nowrap">— Аристотель</span>
+                </p>
+
+                {process.env.NODE_ENV === 'development' && (
+                     <div>
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-[10px] h-auto py-1 px-2 text-muted-foreground/50 hover:text-foreground hover:bg-transparent"
+                            onClick={handleDevLogin}
+                            disabled={isDevLoginLoading}
+                        >
+                            {isDevLoginLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <UserCircle className="w-3 h-3 mr-1" />}
+                            Dev Login
+                        </Button>
+                        
+                        {configError && (
+                            <div className="mt-1 text-[10px] text-red-500 max-w-xs mx-auto">
+                                ⚠️ {configError}
+                            </div>
+                        )}
+                     </div>
                 )}
             </div>
-        )}
-        
-        {/* Helper text for localhost */}
-        {process.env.NODE_ENV === 'development' && (
-             <div className="mt-4 p-4 bg-yellow-500/10 text-yellow-600 rounded-lg text-xs text-left">
-                {configError && (
-                    <div className="mb-4 p-2 bg-red-500/20 border border-red-500/50 rounded text-red-700 font-bold">
-                        ⚠️ {configError}
-                    </div>
-                )}
-                <p className="font-bold mb-1">🔧 Режим разработки:</p>
-                <p>Если виджет не отображается:</p>
-                <ul className="list-disc pl-4 mt-1 space-y-1">
-                    <li>Проверьте, что домен (localhost) добавлен в BotFather (/setdomain) — <b>не работает для localhost</b></li>
-                    <li>Используйте <b>ngrok</b> или задеплойте на GitHub Pages</li>
-                    <li>Убедитесь, что переменные окружения (.env.local) настроены корректно</li>
-                </ul>
-
-                <div className="mt-4 pt-4 border-t border-yellow-500/20">
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full bg-yellow-500/20 border-yellow-500/50 hover:bg-yellow-500/30 text-yellow-700"
-                        onClick={handleDevLogin}
-                        disabled={isDevLoginLoading}
-                    >
-                        {isDevLoginLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserCircle className="w-4 h-4 mr-2" />}
-                        Тестовый вход (Dev)
-                    </Button>
-                    <p className="text-[10px] mt-1 opacity-80">Создаст user: habbiter_dev_user@gmail.com</p>
-                </div>
-             </div>
-        )}
-
-        <p className="text-xs text-muted-foreground mt-6">
-          Авторизуясь, вы соглашаетесь с условиями использования и политикой конфиденциальности.
-        </p>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

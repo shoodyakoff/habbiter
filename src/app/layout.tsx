@@ -16,15 +16,21 @@ const onest = Onest({
   subsets: ["latin", "cyrillic"],
 });
 
+import { usePathname } from "next/navigation";
+
+// ... existing imports
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const [queryClient] = useState(() => new QueryClient());
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/login';
 
   return (
-    <html lang="ru">
+    <html lang="ru" suppressHydrationWarning>
       <head>
         <Script 
           src="https://telegram.org/js/telegram-web-app.js" 
@@ -36,11 +42,11 @@ export default function RootLayout({
       >
         <QueryClientProvider client={queryClient}>
           <AuthGuard>
-            <Header />
-            <main className="flex-1 pb-24 pt-4 px-4 container mx-auto max-w-md w-full">
+            {!isLoginPage && <Header />}
+            <main className={`flex-1 ${!isLoginPage ? 'pb-24 pt-4 px-4 container mx-auto max-w-md w-full' : ''}`}>
               {children}
             </main>
-            <BottomNav />
+            {!isLoginPage && <BottomNav />}
           </AuthGuard>
           <DebugConsole />
         </QueryClientProvider>
