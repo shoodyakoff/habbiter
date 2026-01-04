@@ -34,21 +34,24 @@ serve(async (req: Request) => {
                 
             if (tokenData) {
                 // Check subscription FIRST
+                console.log(`Checking subscription for user ${userId} in channel ${TELEGRAM_CHANNEL_ID}`)
                 const isSubscribed = await checkChannelSubscription(userId, TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID)
+                console.log(`Subscription status for ${userId}: ${isSubscribed}`)
 
                 if (!isSubscribed) {
-                    // Not subscribed - send message with button
-                    const channelLink = `https://t.me/${TELEGRAM_CHANNEL_ID.replace('@', '')}`
+                    // Not subscribed - send message with link
+                    const channelName = TELEGRAM_CHANNEL_ID.replace('@', '')
+                    const channelLink = `https://t.me/${channelName}`
+                    
                     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             chat_id: chatId,
-                            text: `🔒 Для входа в Habbiter необходимо подписаться на наш канал: ${TELEGRAM_CHANNEL_ID}\n\nПосле подписки нажмите кнопку ниже.`,
+                            text: `❌ Вы не подписаны на канал.\n\nДля авторизации необходимо подписаться: @${channelName}\n\nПосле подписки отправьте /start еще раз (или перейдите по ссылке с сайта).`,
                             reply_markup: {
                                 inline_keyboard: [[
-                                    { text: 'Подписаться', url: channelLink },
-                                    { text: 'Я подписался', callback_data: `check_auth_subscription:${token}` }
+                                    { text: 'Подписаться на канал', url: channelLink }
                                 ]]
                             }
                         })
@@ -64,106 +67,6 @@ serve(async (req: Request) => {
         }
     }
 
-    // Check if callback_query
-    if (update.callback_query) {
-        const query = update.callback_query
-        const telegramId = query.from.id
-        const data = query.data
-        
-        // Handle subscription check during auth flow
-        if (data.startsWith('check_auth_subscription:')) {
-            const token = data.split(':')[1]
-            const isSubscribed = await checkChannelSubscription(telegramId, TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID)
-
-            if (isSubscribed) {
-                const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-                
-                // Verify token again just in case
-                const { data: tokenData } = await supabase
-                    .from('auth_tokens')
-                    .select('*')
-                    .eq('token', token)
-                    .eq('status', 'pending')
-                    .single()
-
-                if (tokenData) {
-                    await authorizeUser(supabase, tokenData, telegramId, query.message, isSubscribed, TELEGRAM_BOT_TOKEN, telegramId) // query.message structure might differ slightly but for username etc we might need query.from
-                    
-                    // Answer callback
-                    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            callback_query_id: query.id,
-                            text: '✅ Успешно! Вы авторизованы.',
-                        })
-                    })
-                } else {
-                     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            callback_query_id: query.id,
-                            text: '⚠️ Срок действия ссылки истек.',
-                            show_alert: true
-                        })
-                    })
-                }
-            } else {
-                 await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        callback_query_id: query.id,
-                        text: '❌ Вы еще не подписались на канал.',
-                        show_alert: true
-                    })
-                })
-            }
-        }
-
-        if (data === 'check_subscription') {
-            const isSubscribed = await checkChannelSubscription(telegramId, TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID)
-            
-            // Update DB if user exists
-            const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-            
-            // We need to find the user by telegram_id
-            const { data: user } = await supabase
-                .from('users')
-                .select('id')
-                .eq('telegram_id', telegramId)
-                .single()
-            
-            if (user) {
-                await supabase.from('users').update({
-                    is_subscribed: isSubscribed,
-                    subscription_checked_at: new Date().toISOString()
-                }).eq('id', user.id)
-                
-                // Log check
-                await supabase.from('subscription_checks').insert({
-                    user_id: user.id,
-                    is_subscribed: isSubscribed,
-                    check_method: 'webhook_button',
-                    status: isSubscribed ? 'member' : 'left'
-                })
-            }
-            
-            // Answer callback query
-            const text = isSubscribed ? '✅ Подписка подтверждена! Вы можете вернуться в приложение.' : '❌ Вы не подписаны на канал. Пожалуйста, подпишитесь.'
-            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    callback_query_id: query.id,
-                    text: text,
-                    show_alert: true
-                })
-            })
-        }
-    }
-
     return new Response('ok', { status: 200 })
   } catch (error) {
     console.error(error)
@@ -174,8 +77,8 @@ serve(async (req: Request) => {
 // Helper to perform auth logic (DRY)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function authorizeUser(supabase: any, tokenData: any, userId: number, messageOrUser: any, isSubscribed: boolean, botToken: string, chatId: number) {
-    // Extract user info. If coming from message, it's message.from. If from callback, we might pass query.from directly
-    const user = messageOrUser.from ? messageOrUser.from : messageOrUser; // Attempt to handle both message object or user object
+    // Extract user info
+    const user = messageOrUser.from ? messageOrUser.from : messageOrUser;
 
     // Update token with user info
     await supabase
@@ -219,7 +122,7 @@ async function authorizeUser(supabase: any, tokenData: any, userId: number, mess
     }
     
     // Send success message
-    await sendMessage(chatId, botToken, "✅ Успешная авторизация! Вернитесь на сайт, вас должно автоматически авторизовать.")
+    await sendMessage(chatId, botToken, "✅ Вы успешно авторизовались! Можете возвращаться в приложение.")
 }
 
 async function sendMessage(chatId: number, token: string, text: string) {
@@ -239,12 +142,27 @@ async function sendMessage(chatId: number, token: string, text: string) {
 
 async function checkChannelSubscription(userId: string | number, token: string, channelId: string) {
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/getChatMember?chat_id=${channelId}&user_id=${userId}`)
+    // Ensure channelId starts with @ if it's a username (not a number)
+    let formattedChannelId = channelId.trim();
+    if (!formattedChannelId.startsWith('@') && !formattedChannelId.startsWith('-100') && isNaN(Number(formattedChannelId))) {
+        formattedChannelId = `@${formattedChannelId}`;
+    }
+
+    console.log(`Making request to getChatMember for channel: ${formattedChannelId}, user: ${userId}`);
+    const res = await fetch(`https://api.telegram.org/bot${token}/getChatMember?chat_id=${formattedChannelId}&user_id=${userId}`)
     const data = await res.json()
-    if (!data.ok) return false
+    
+    if (!data.ok) {
+        console.error('Telegram API error (checkChannelSubscription):', JSON.stringify(data));
+        return false
+    }
+    
     const status = data.result.status
-    return ['creator', 'administrator', 'member'].includes(status)
-  } catch {
+    console.log(`User ${userId} status in channel ${formattedChannelId}: ${status}`);
+    
+    return ['creator', 'administrator', 'member', 'restricted'].includes(status)
+  } catch (e) {
+    console.error('Error checking subscription:', e)
     return false
   }
 }
