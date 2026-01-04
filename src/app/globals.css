@@ -38,6 +38,22 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   
+  /* Telegram Brand */
+  --color-telegram: var(--telegram);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --telegram: #24A1DE;
+
   /* Habit Colors - Jewel & Nature-inspired (20 colors) */
   /* Reds & Pinks */
   --color-habit-crimson: #DC143C;
@@ -68,22 +84,6 @@
   --color-habit-lavender: #967BB6;
   --color-habit-plum: #8E4585;
   --color-habit-orchid: #DA70D6;
-
-  /* Telegram Brand */
-  --color-telegram: var(--telegram);
-
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-}
-
-:root {
-  --radius: 0.625rem;
-  --telegram: #24A1DE;
 
   /* Light Mode - Spec Values */
   --background: #FFFFFF;

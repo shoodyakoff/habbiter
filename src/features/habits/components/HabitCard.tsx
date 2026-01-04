@@ -89,20 +89,14 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           if (hasTrackingParams) {
             onClick?.(habit);
           } else {
-             // If no tracking params, clicking the card just toggles? 
-             // Or does nothing?
-             // Usually clicking the card opens details.
-             // If we want "edit button should not be there", maybe we just don't open details?
-             // Let's assume we treat the card click as "open details".
-             // If no details to fill, maybe just toggle?
              triggerHaptic();
              onToggle(habit.id);
           }
         }}
         className={cn(
-          "relative h-28 rounded-2xl p-4 flex flex-col justify-between shadow-sm cursor-pointer",
-          // If habit.color is a hex, we use style. If it's a class name, use class.
-          // Schema says Hex.
+          "relative h-28 rounded-2xl p-4 flex flex-col justify-between shadow-sm cursor-pointer z-10",
+          // Fallback background if CSS variable fails
+          "bg-card"
         )}
         style={{ backgroundColor: `var(--color-habit-${habit.color || 'sapphire'})` }}
       >
