@@ -13,6 +13,7 @@ export default function SubscribePage() {
   const [checking, setChecking] = useState(false);
 
   const channelUsername = process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_USERNAME || '';
+  const initialCheckDone = React.useRef(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -20,7 +21,7 @@ export default function SubscribePage() {
     }
   }, [user, loading, router]);
 
-  const checkSubscription = async () => {
+  const checkSubscription = async (isAutoCheck = false) => {
     setChecking(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -37,15 +38,26 @@ export default function SubscribePage() {
       if (data.isSubscribed) {
         router.push('/');
       } else {
-        alert('Похоже, вы еще не подписались. Попробуйте снова через пару секунд после подписки.');
+        if (!isAutoCheck) {
+          alert('Похоже, вы еще не подписались. Попробуйте снова через пару секунд после подписки.');
+        }
       }
     } catch (error) {
       console.error(error);
-      alert('Ошибка при проверке подписки');
+      if (!isAutoCheck) {
+        alert('Ошибка при проверке подписки');
+      }
     } finally {
       setChecking(false);
     }
   };
+
+  useEffect(() => {
+    if (user && !loading && !initialCheckDone.current) {
+      initialCheckDone.current = true;
+      checkSubscription(true);
+    }
+  }, [user, loading]);
 
   if (loading || !user) {
     return (
@@ -80,7 +92,7 @@ export default function SubscribePage() {
                     size="lg" 
                     variant="secondary"
                     className="w-full text-lg h-14"
-                    onClick={checkSubscription}
+                    onClick={() => checkSubscription(false)}
                     disabled={checking}
                 >
                     {checking ? (
