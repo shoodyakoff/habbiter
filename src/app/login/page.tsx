@@ -24,12 +24,20 @@ export default function LoginPage() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   
+  const [configError, setConfigError] = useState<string | null>(null);
+
   useEffect(() => {
     logger.info('[LoginPage] Config', {
         botUsername: botUsername ? `${botUsername.substring(0, 3)}...` : 'MISSING',
         supabaseUrl: supabaseUrl ? 'PRESENT' : 'MISSING',
         supabaseAnonKey: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 5)}...` : 'MISSING',
     });
+
+    if (supabaseAnonKey && !supabaseAnonKey.startsWith('eyJ')) {
+        const error = 'Некорректный NEXT_PUBLIC_SUPABASE_ANON_KEY. Он должен начинаться с "eyJ" (JWT токен). Вы, вероятно, используете API Key Reference ID.';
+        logger.error(error);
+        setConfigError(error);
+    }
   }, [botUsername, supabaseUrl, supabaseAnonKey]);
 
   const [isMiniApp, setIsMiniApp] = useState(false);
@@ -37,6 +45,10 @@ export default function LoginPage() {
   useEffect(() => {
     const handleMiniAppAuth = async (initData: string) => {
         if (isDevLoginLoading) return;
+        if (!initData) {
+            logger.warn('handleMiniAppAuth called with empty initData');
+            return;
+        }
         
         setIsDevLoginLoading(true);
         try {
@@ -96,9 +108,15 @@ export default function LoginPage() {
   const [pollingToken, setPollingToken] = useState<string | null>(null);
 
   const startDeepLinkAuth = async () => {
+      if (configError) {
+          alert(configError);
+          return;
+      }
+
       setIsDevLoginLoading(true);
       try {
           if (!supabaseAnonKey) throw new Error('Supabase Anon Key is missing');
+          if (!supabaseAnonKey.startsWith('eyJ')) throw new Error('Invalid Supabase Anon Key (must be JWT)');
 
           logger.info('Starting Deep Link Auth');
           const response = await fetch(`${supabaseUrl}/functions/v1/generate-auth-token`, {
@@ -287,6 +305,11 @@ export default function LoginPage() {
         {/* Helper text for localhost */}
         {process.env.NODE_ENV === 'development' && (
              <div className="mt-4 p-4 bg-yellow-500/10 text-yellow-600 rounded-lg text-xs text-left">
+                {configError && (
+                    <div className="mb-4 p-2 bg-red-500/20 border border-red-500/50 rounded text-red-700 font-bold">
+                        ⚠️ {configError}
+                    </div>
+                )}
                 <p className="font-bold mb-1">🔧 Режим разработки:</p>
                 <p>Если виджет не отображается:</p>
                 <ul className="list-disc pl-4 mt-1 space-y-1">
