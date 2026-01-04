@@ -8,7 +8,6 @@ import { TodayProgress } from '@/features/habits/components/TodayProgress';
 import { HabitCard } from '@/features/habits/components/HabitCard';
 import { EmptyState } from '@/features/habits/components/EmptyState';
 import { HabitDetailDialog } from '@/features/habits/components/HabitDetailDialog';
-import { FloatingActionButton } from '@/features/habits/components/FloatingActionButton';
 import { useHabitsQuery, useHabitRecordsQuery, useHabitMutations, useWeekRecordsQuery } from '@/features/habits/api/useHabits';
 import { Habit } from '@/features/habits/types/schema';
 import { format } from 'date-fns';
@@ -32,10 +31,6 @@ function HomeContent() {
 
   const handleToggle = (id: string) => {
     toggleHabit.mutate({ id, date: selectedDateStr });
-  };
-
-  const handleArchive = (id: string) => {
-    archiveHabit.mutate(id);
   };
 
   const handleCardClick = (habit: Habit) => {
@@ -134,9 +129,6 @@ function HomeContent() {
       ) : (
         <EmptyState onCreate={handleCreate} />
       )}
-
-      {/* FAB for creating new habits */}
-      <FloatingActionButton />
 
       {/* Detail Dialog */}
       <HabitDetailDialog 

@@ -104,11 +104,11 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
         {/* Footer: Name + Streak */}
         <div className="mt-auto">
-          <h3 className={cn("font-semibold text-lg leading-tight line-clamp-2", textColorClass)}>
+          <h3 className={cn("font-semibold text-base leading-tight line-clamp-2", textColorClass)}>
             {habit.name}
           </h3>
           {habit.description && (
-            <p className={cn("text-xs opacity-80 mt-1 line-clamp-1", textColorClass)}>
+            <p className={cn("text-[10px] opacity-80 mt-1 line-clamp-1", textColorClass)}>
               {habit.description}
             </p>
           )}

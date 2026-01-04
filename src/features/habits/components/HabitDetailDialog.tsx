@@ -93,7 +93,7 @@ export const HabitDetailDialog: React.FC<HabitDetailDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[calc(100%-10px)] overflow-y-auto">
         <DialogHeader>
           <div className="flex justify-between items-start">
             <DialogTitle className="text-xl flex items-center gap-2">
@@ -107,18 +107,6 @@ export const HabitDetailDialog: React.FC<HabitDetailDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-            {/* Status Toggle */}
-            <div className="flex items-center justify-between bg-secondary/30 p-3 rounded-lg">
-                <span className="font-medium">Статус выполнения</span>
-                <Button 
-                    variant={isCompleted ? "default" : "outline"}
-                    className={isCompleted ? "bg-green-600 hover:bg-green-700" : ""}
-                    onClick={handleToggleCompletion}
-                >
-                    {isCompleted ? "Выполнено" : "Не выполнено"}
-                </Button>
-            </div>
-
             {/* Tracking Inputs */}
             {hasTrackingParams && (
                 <>

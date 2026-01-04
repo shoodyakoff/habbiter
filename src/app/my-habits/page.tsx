@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { getTextColorForHabit } from '@/lib/colors';
 import { getIcon } from '@/components/shared/Icon/IconCatalog';
+import { FloatingActionButton } from '@/features/habits/components/FloatingActionButton';
 
 export default function MyHabitsPage() {
   const router = useRouter();

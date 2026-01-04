@@ -37,7 +37,7 @@ export default function RootLayout({
         <QueryClientProvider client={queryClient}>
           <AuthGuard>
             <Header />
-            <main className="flex-1 pb-24 pt-4 px-4 container mx-auto">
+            <main className="flex-1 pb-24 pt-4 px-4 container mx-auto max-w-md w-full">
               {children}
             </main>
             <BottomNav />

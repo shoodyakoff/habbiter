@@ -142,7 +142,10 @@ export const WeekSwitcher: React.FC<WeekSwitcherProps> = ({
         "w-full overflow-x-auto no-scrollbar py-2",
         "bg-secondary/40 border border-border/50 rounded-2xl"
       )}>
-        <div className="flex items-center min-w-full gap-1 px-2">
+        <div className={cn(
+          "flex items-center min-w-full gap-1 px-2",
+          viewMode === 'week' ? "justify-between" : ""
+        )}>
           {days.map((day) => {
             const dateStr = format(day, 'yyyy-MM-dd');
             const isSelected = selectedDateStr === dateStr;
@@ -155,7 +158,8 @@ export const WeekSwitcher: React.FC<WeekSwitcherProps> = ({
                 onClick={() => handleDayClick(day)}
                 disabled={isFutureDay}
                 className={cn(
-                  "flex flex-col items-center justify-center min-w-[44px] h-[56px] rounded-xl transition-all duration-200 shrink-0",
+                  "flex flex-col items-center justify-center h-[56px] rounded-xl transition-all duration-200 shrink-0",
+                  viewMode === 'week' ? "flex-1 min-w-0" : "min-w-[44px]",
                   isSelected 
                     ? "bg-primary text-primary-foreground shadow-md scale-100" 
                     : "bg-transparent hover:bg-background/50 text-foreground",
@@ -166,7 +170,7 @@ export const WeekSwitcher: React.FC<WeekSwitcherProps> = ({
                   "text-xs font-medium mb-1 capitalize",
                   isSelected ? "text-primary-foreground" : "text-muted-foreground"
                 )}>
-                  {format(day, 'EEE', { locale: ru })}
+                  {format(day, 'EEEEEE', { locale: ru })}
                 </span>
                 <span className={cn(
                   "text-lg font-semibold leading-none",

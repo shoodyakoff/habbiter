@@ -28,7 +28,7 @@ export const BottomNav = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2">
-      <div className="flex justify-around items-center h-12">
+      <div className="flex justify-around items-center h-12 max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
