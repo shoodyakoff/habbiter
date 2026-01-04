@@ -5,6 +5,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Dna } from '@phosphor-icons/react';
 
 interface HeaderProps {
   title?: string;
@@ -23,7 +24,10 @@ export const Header: React.FC<HeaderProps> = ({ title = 'Habbiter', rightAction 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between px-4 max-w-md mx-auto">
-        <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+        <div className="flex items-center gap-2">
+          <Dna size={30} weight="fill" className="text-primary" />
+          <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+        </div>
         <div className="flex items-center gap-2">
             {rightAction && <div>{rightAction}</div>}
             {user && (

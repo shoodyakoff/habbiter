@@ -10,8 +10,7 @@ import { logger } from '@/lib/logger';
 import { motion, Variants } from 'framer-motion';
 import { getTextColorForHabit } from '@/lib/colors';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
-import { BookOpen, Drop, PersonSimpleRun } from '@phosphor-icons/react';
+import { BookOpen, Drop, PersonSimpleRun, Dna } from '@phosphor-icons/react';
 
 // Mock Habit Card Component for Login Page
 const MockHabitCard = ({ 
@@ -56,14 +55,14 @@ const MockHabitCard = ({
             </div>
 
             {/* Footer */}
-            <div className="mt-auto text-left">
-                <h3 className={cn("font-semibold text-base leading-tight line-clamp-2", textColorClass)}>
+            <div className="mt-auto flex justify-between items-end w-full">
+                <h3 className={cn("font-semibold text-base leading-tight line-clamp-2 text-left mr-2", textColorClass)}>
                     {name}
                 </h3>
                 
                 {streak > 0 && (
                     <div className={cn(
-                        "inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-md bg-black/10 backdrop-blur-sm",
+                        "flex items-center gap-1 px-2 py-1 rounded-md bg-black/10 backdrop-blur-sm shrink-0",
                         textColorClass
                     )}>
                         <Flame size={14} fill="currentColor" className={isLightBg ? "text-red-600" : "text-orange-300"} />
@@ -342,7 +341,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-background text-foreground flex flex-col">
+    <div className="relative h-screen w-full overflow-y-auto bg-background text-foreground flex flex-col">
       {/* Ambient Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
          <motion.div 
@@ -370,21 +369,15 @@ export default function LoginPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 flex-1 flex flex-col items-center justify-between p-6 pb-8 text-center h-full"
+        className="relative z-10 flex-1 flex flex-col items-center justify-between px-6 py-[100px] text-center min-h-full"
       >
         {/* Spacer for top alignment balance */}
         <div className="flex-none h-4" />
 
         {/* Hero Section */}
         <motion.div variants={itemVariants} className="flex-none flex flex-row items-center justify-center gap-4">
-            <div className="relative w-[50px] h-[50px]">
-                <Image 
-                    src="logo.png" 
-                    alt="Habbiter Logo" 
-                    width={50} 
-                    height={50} 
-                    className="object-contain"
-                />
+            <div className="relative flex items-center justify-center">
+                <Dna size={40} weight="fill" className="text-black" />
             </div>
             <h1 
                 onClick={handleLogoClick}
@@ -407,7 +400,7 @@ export default function LoginPage() {
                 >
                     <MockHabitCard 
                         name="Читать 30 минут" 
-                        color="amber" 
+                        color="rose" 
                         icon={BookOpen} 
                         streak={12} 
                     />
@@ -438,7 +431,7 @@ export default function LoginPage() {
                 >
                     <MockHabitCard 
                         name="Утренняя пробежка" 
-                        color="emerald" 
+                        color="teal" 
                         icon={PersonSimpleRun} 
                         streak={3} 
                     />
@@ -447,7 +440,7 @@ export default function LoginPage() {
         </motion.div>
 
         {/* Bottom Section: Action + Quote + Dev */}
-        <motion.div variants={itemVariants} className="flex-none w-full max-w-xs space-y-6">
+        <motion.div variants={itemVariants} className="flex-none w-full max-w-xs space-y-6 mt-[100px]">
             {isMiniApp ? (
                  <div className="flex flex-col items-center justify-center py-4 bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50">
                     <Loader2 className="h-6 w-6 animate-spin text-primary mb-3" />
@@ -456,7 +449,7 @@ export default function LoginPage() {
             ) : (
                 <div className="space-y-4">
                     <Button 
-                        className="w-full h-14 text-lg bg-[#24A1DE] hover:bg-[#24A1DE]/90 text-white rounded-2xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                        className="w-full h-14 text-lg bg-[#0F52BA] hover:bg-[#0F52BA]/90 text-white rounded-2xl shadow-lg shadow-[#0F52BA]/20 transition-all active:scale-95"
                         onClick={startDeepLinkAuth}
                         disabled={isDevLoginLoading || !!pollingToken}
                     >
