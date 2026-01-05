@@ -150,21 +150,20 @@ export default function LoginPage() {
     if (typeof window !== 'undefined') {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tg = (window as any).Telegram?.WebApp;
-        if (tg) {
+        if (tg && tg.initData) {
             tg.ready();
             const initData = tg.initData;
-            logger.info('[LoginPage] Detected Telegram Mini App', { 
-                initData: initData ? 'PRESENT' : 'MISSING',
-                platform: tg.platform 
-            });
-            
-            if (tg.platform && tg.platform !== 'unknown') {
-                setIsMiniApp(true);
-            }
 
-            if (initData) {
-                handleMiniAppAuth(initData);
-            }
+            // Only treat as Mini App if we have actual initData from Telegram
+            logger.info('[LoginPage] Detected Telegram Mini App with initData', {
+                platform: tg.platform
+            });
+
+            setIsMiniApp(true);
+            handleMiniAppAuth(initData);
+        } else if (tg) {
+            // Telegram WebApp SDK is present but no initData (opened in browser)
+            logger.info('[LoginPage] Telegram WebApp SDK detected but no initData (browser mode)');
         }
     }
   }, [supabaseUrl, router, supabaseAnonKey]);

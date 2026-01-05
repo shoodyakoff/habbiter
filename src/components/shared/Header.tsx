@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Dna } from '@phosphor-icons/react';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
 interface HeaderProps {
   title?: string;
@@ -30,6 +31,7 @@ export const Header: React.FC<HeaderProps> = ({ title = 'Habbiter', rightAction 
         </div>
         <div className="flex items-center gap-2">
             {rightAction && <div>{rightAction}</div>}
+            <ThemeToggle />
             {user && (
                 <Button variant="ghost" size="icon" onClick={handleLogout} title="Выйти">
                     <LogOut className="h-5 w-5 text-muted-foreground" />
