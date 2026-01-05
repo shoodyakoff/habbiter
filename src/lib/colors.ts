@@ -54,14 +54,7 @@ const HABIT_COLOR_HEX: Record<string, string> = {
  * @returns Text color class name
  */
 export function getTextColorForHabit(habitColor: string): 'text-black' | 'text-white' {
-  const hex = HABIT_COLOR_HEX[habitColor];
-  if (!hex) return 'text-white'; // Default fallback
-
-  const [r, g, b] = hexToRgb(hex);
-  const luminance = getLuminance(r, g, b);
-
-  // WCAG threshold: 0.5 (empirically adjusted for vibrant colors)
-  return luminance > 0.5 ? 'text-black' : 'text-white';
+  return 'text-white';
 }
 
 /**

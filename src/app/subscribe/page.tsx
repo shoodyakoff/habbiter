@@ -1,19 +1,20 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useSubscriptionStatus } from '@/features/auth/hooks/useSubscriptionStatus';
 import { useRouter } from 'next/navigation';
 import { Loader2, ExternalLink, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
 
 export default function SubscribePage() {
   const { user, loading } = useAuth();
+  const { checkSubscription } = useSubscriptionStatus();
   const router = useRouter();
-  const [checking, setChecking] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const channelUsername = process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_USERNAME || '';
-  const initialCheckDone = React.useRef(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -21,43 +22,47 @@ export default function SubscribePage() {
     }
   }, [user, loading, router]);
 
-  const checkSubscription = async (isAutoCheck = false) => {
-    setChecking(true);
+  const handleCheck = useCallback(async () => {
+    setIsChecking(prev => {
+      if (prev) return prev; // Already checking, don't start again
+      return true;
+    });
+    setError(null);
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/check-subscription`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${session?.access_token}`
-        }
-      });
-      
-      const data = await res.json();
-      
-      if (data.isSubscribed) {
+      const result = await checkSubscription.mutateAsync();
+
+      // Check if user is actually subscribed
+      if (result.isSubscribed) {
+        // Success - user is subscribed, redirect to main page
         router.push('/');
       } else {
-        if (!isAutoCheck) {
-          alert('Похоже, вы еще не подписались. Попробуйте снова через пару секунд после подписки.');
-        }
+        // User checked but is not subscribed
+        setError('Похоже, вы еще не подписались на канал. Пожалуйста, подпишитесь и попробуйте снова.');
       }
-    } catch (error) {
-      console.error(error);
-      if (!isAutoCheck) {
-        alert('Ошибка при проверке подписки');
-      }
-    } finally {
-      setChecking(false);
-    }
-  };
+    } catch (err: any) {
+      const errorMessage = err.message || 'Ошибка при проверке подписки';
 
-  useEffect(() => {
-    if (user && !loading && !initialCheckDone.current) {
-      initialCheckDone.current = true;
-      checkSubscription(true);
+      // Network error → allow access (as per user's requirement)
+      if (errorMessage.includes('network_error')) {
+        console.warn('[Subscribe] Network error, allowing access');
+        router.push('/');
+        return;
+      }
+
+      // Session error → show error on the same page, don't redirect
+      if (errorMessage.includes('no_session') || errorMessage.includes('unauthorized')) {
+        console.error('[Subscribe] Session error:', errorMessage);
+        setError('Произошла ошибка авторизации. Пожалуйста, перезагрузите страницу и попробуйте снова.');
+        return;
+      }
+
+      // Other errors → show generic error message
+      setError('Произошла ошибка при проверке подписки. Попробуйте снова через несколько секунд.');
+    } finally {
+      setIsChecking(false);
     }
-  }, [user, loading]);
+  }, [checkSubscription, router]);
 
   if (loading || !user) {
     return (
@@ -88,14 +93,14 @@ export default function SubscribePage() {
                     Подписаться на канал
                 </Button>
 
-                <Button 
-                    size="lg" 
+                <Button
+                    size="lg"
                     variant="secondary"
                     className="w-full text-lg h-14"
-                    onClick={() => checkSubscription(false)}
-                    disabled={checking}
+                    onClick={handleCheck}
+                    disabled={isChecking}
                 >
-                    {checking ? (
+                    {isChecking ? (
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     ) : (
                         <CheckCircle className="mr-2 h-5 w-5" />
@@ -103,6 +108,12 @@ export default function SubscribePage() {
                     Я подписался
                 </Button>
             </div>
+
+            {error && (
+                <div className="bg-destructive/10 border border-destructive text-destructive rounded-lg p-4 text-sm">
+                    {error}
+                </div>
+            )}
         </div>
         
         <p className="text-sm text-muted-foreground">

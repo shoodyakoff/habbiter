@@ -91,7 +91,12 @@ serve(async (req: Request) => {
         console.error('User upsert error:', userError)
         throw userError
     }
-    
+
+    // Update JWT metadata with subscription status
+    await supabase.auth.admin.updateUserById(userId, {
+        app_metadata: { is_subscribed: isSubscribed }
+    })
+
     // 5. Create Session
     const { data: sessionData, error: sessionError } = await supabase.auth.signInWithPassword({
         email,

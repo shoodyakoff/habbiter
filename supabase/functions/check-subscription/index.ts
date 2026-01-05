@@ -31,16 +31,18 @@ serve(async (req: Request) => {
         return new Response(JSON.stringify({ error: 'No authorization header' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } })
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Use service role to verify JWT token
+    const adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+    // Extract token from "Bearer <token>"
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await adminSupabase.auth.getUser(token)
 
     if (authError || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Get telegram_id from public users table using service role
-    const adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-    
+    // Get telegram_id from public users table using service role (reuse adminSupabase)
     const { data: userData, error: dbError } = await adminSupabase
         .from('users')
         .select('telegram_id')
@@ -84,7 +86,17 @@ serve(async (req: Request) => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Check subscription error:', errorMessage);
-    return new Response(JSON.stringify({ error: errorMessage }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
+    // Return structured error response with errorType
+    // This helps frontend distinguish between network errors and actual failures
+    return new Response(JSON.stringify({
+      error: errorMessage,
+      errorType: 'network_error',
+      isSubscribed: null // null = unknown status (not false!)
+    }), {
+      status: 500, // 500 for network errors (not 400)
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   }
 })
 
@@ -98,16 +110,16 @@ async function checkChannelSubscription(userId: string, token: string, channelId
 
     const res = await fetch(`https://api.telegram.org/bot${token}/getChatMember?chat_id=${formattedChannelId}&user_id=${userId}`)
     const data = await res.json()
-    
+
     if (!data.ok) {
         console.error('Telegram API error:', JSON.stringify(data));
-        return false
+        throw new Error('telegram_api_error') // Throw instead of return false
     }
-    
+
     const status = data.result.status
     return ['creator', 'administrator', 'member', 'restricted'].includes(status)
   } catch (e) {
     console.error('Check subscription network error:', e);
-    return false
+    throw new Error('network_error') // Throw instead of return false
   }
 }

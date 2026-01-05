@@ -9,6 +9,10 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 serve(async () => {
+  const startTime = new Date();
+  let processedCount = 0;
+  let errorCount = 0;
+
   try {
     // 1. Get users to check (expired cache)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -26,47 +30,73 @@ serve(async () => {
     
     if (users) {
         for (const user of users) {
-            const isSubscribed = await checkChannelSubscription(user.telegram_id, TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID)
-            
-            // Update user
-            await supabase.from('users').update({
-                is_subscribed: isSubscribed,
-                subscription_checked_at: new Date().toISOString(),
-                // Reset expiry to 7 days from now
-                subscription_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-            }).eq('id', user.id)
-            
-            // Log check
-            await supabase.from('subscription_checks').insert({
-                user_id: user.id,
-                is_subscribed: isSubscribed,
-                check_method: 'cron',
-                status: isSubscribed ? 'member' : 'left'
-            })
-            
-            if (user.is_subscribed && !isSubscribed) {
-                // Send notification if they just lost subscription
-                 await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: user.telegram_id,
-                        text: '⚠️ Ваша подписка истекла или вы вышли из канала. Пожалуйста, подпишитесь снова, чтобы продолжить использовать Habbiter.',
-                        reply_markup: {
-                            inline_keyboard: [[
-                                { text: 'Подписаться', url: `https://t.me/${TELEGRAM_CHANNEL_ID.replace('@', '')}` },
-                                { text: 'Я подписался', callback_data: 'check_subscription' }
-                            ]]
-                        }
+            try {
+                const isSubscribed = await checkChannelSubscription(user.telegram_id, TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID)
+
+                // Update user in database
+                await supabase.from('users').update({
+                    is_subscribed: isSubscribed,
+                    subscription_checked_at: new Date().toISOString(),
+                    // Reset expiry to 7 days from now
+                    subscription_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+                }).eq('id', user.id)
+
+                // Update JWT metadata if status changed
+                if (user.is_subscribed !== isSubscribed) {
+                    await supabase.auth.admin.updateUserById(user.id, {
+                        app_metadata: { is_subscribed: isSubscribed }
                     })
+                }
+
+                // Log check
+                await supabase.from('subscription_checks').insert({
+                    user_id: user.id,
+                    is_subscribed: isSubscribed,
+                    check_method: 'cron',
+                    status: isSubscribed ? 'member' : 'left'
                 })
+
+                if (user.is_subscribed && !isSubscribed) {
+                    // Send notification if they just lost subscription
+                     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: user.telegram_id,
+                            text: '⚠️ Ваша подписка истекла или вы вышли из канала. Пожалуйста, подпишитесь снова, чтобы продолжить использовать Habbiter.',
+                            reply_markup: {
+                                inline_keyboard: [[
+                                    { text: 'Подписаться', url: `https://t.me/${TELEGRAM_CHANNEL_ID.replace('@', '')}` },
+                                    { text: 'Я подписался', callback_data: 'check_subscription' }
+                                ]]
+                            }
+                        })
+                    })
+                }
+
+                results.push({ id: user.id, isSubscribed })
+                processedCount++
+            } catch (userError) {
+                console.error(`Error checking user ${user.id}:`, userError)
+                errorCount++
+                results.push({ id: user.id, error: userError instanceof Error ? userError.message : 'Unknown error' })
             }
-            
-            results.push({ id: user.id, isSubscribed })
         }
     }
 
-    return new Response(JSON.stringify({ processed: results.length, results }), { headers: { 'Content-Type': 'application/json' } })
+    // Log cron execution to database
+    await supabase.from('cron_execution_logs').insert({
+        job_name: 'weekly-subscription-check',
+        status: errorCount > 0 ? 'partial_success' : 'success',
+        result: { processed: processedCount, errors: errorCount, total: results.length },
+        error_message: errorCount > 0 ? `${errorCount} errors occurred` : null
+    })
+
+    return new Response(JSON.stringify({
+        processed: results.length,
+        results,
+        duration_ms: Date.now() - startTime.getTime()
+    }), { headers: { 'Content-Type': 'application/json' } })
   } catch (error: unknown) {
     console.error(error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

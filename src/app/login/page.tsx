@@ -369,7 +369,7 @@ export default function LoginPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 flex-1 flex flex-col items-center justify-between px-6 py-[100px] text-center min-h-full"
+        className="relative z-10 flex-1 flex flex-col items-center justify-between px-6 pt-8 pb-[150px] text-center min-h-full"
       >
         {/* Spacer for top alignment balance */}
         <div className="flex-none h-4" />
@@ -446,7 +446,7 @@ export default function LoginPage() {
         </motion.div>
 
         {/* Bottom Section: Action + Quote + Dev */}
-        <motion.div variants={itemVariants} className="flex-none w-full max-w-xs space-y-6 mt-[100px]">
+        <motion.div variants={itemVariants} className="flex-none w-full max-w-xs space-y-6 mt-16">
             {isMiniApp ? (
                  <div className="flex flex-col items-center justify-center py-4 bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50">
                     <Loader2 className="h-6 w-6 animate-spin text-primary mb-3" />
