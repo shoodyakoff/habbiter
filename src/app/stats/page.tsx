@@ -13,7 +13,7 @@ import {
   isSameDay 
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { CaretLeft, CaretRight, ChartBar } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, ChartBar, Info } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
@@ -21,10 +21,12 @@ import { getIcon } from '@/components/shared/Icon/IconCatalog';
 import { useHabitsQuery, useWeekRecordsQuery } from '@/features/habits/api/useHabits';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptic';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export default function StatsPage() {
   // 1. State: Selected Date (defaults to today)
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // 2. Derived State: Week calculation
   const { weekDays, weekStart, weekEnd, weekDatesStrings } = useMemo(() => {
@@ -76,30 +78,63 @@ export default function StatsPage() {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/40 px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight">Статистика</h1>
-          
-          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={handlePrevWeek}
-            >
-              <CaretLeft size={16} />
-            </Button>
-            
-            <span className="text-xs font-medium min-w-[90px] text-center tabular-nums">
-              {title}
-            </span>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={handleNextWeek}
-              disabled={isCurrentWeek && isFuture(addWeeks(new Date(), 1))} 
-            >
-              <CaretRight size={16} />
-            </Button>
+
+          <div className="flex items-center gap-2">
+            {/* Help Dialog */}
+            <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Помощь"
+                >
+                  <Info size={16} />
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Метод Франклина</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <p className="text-sm text-foreground leading-relaxed">
+                    Метод Франклина основан на подходе Бенджамина Франклина из его автобиографии.
+                    Он сосредотачивался на одной из 13 добродетелей в неделю, отслеживая их соблюдение
+                    путём пометки непройденных дней красной точкой. Это создаёт визуальный стимул — вы хотите
+                    видеть «чистую строку» без точек, то есть полную неделю без ошибок. Пустое поле означает успех
+                    (привычка выполнена), красная точка (●) означает пропуск (привычка не выполнена).
+                    Этот метод помогает развивать самодисциплину через визуальное отслеживание прогресса.
+                  </p>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Week navigation */}
+            <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handlePrevWeek}
+              >
+                <CaretLeft size={16} />
+              </Button>
+
+              <span className="text-xs font-medium min-w-[90px] text-center tabular-nums">
+                {title}
+              </span>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleNextWeek}
+                disabled={isCurrentWeek && isFuture(addWeeks(new Date(), 1))}
+              >
+                <CaretRight size={16} />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -200,7 +235,7 @@ export default function StatsPage() {
             <div className="mt-8 text-center">
                 <p className="text-xs text-muted-foreground">
                     Пустое поле = Успех
-                    <span className="mx-2">•</span>
+                    <span className="mx-2"> | </span>
                     <span className="text-destructive font-bold">●</span> = Пропуск
                 </p>
             </div>
