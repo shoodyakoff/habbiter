@@ -180,13 +180,13 @@ export const WeekSwitcher: React.FC<WeekSwitcherProps> = ({
                 </span>
                 
                 {/* Dot Indicator */}
-                {!isFutureDay && (
-                  <div className={cn(
-                    "mt-1 w-1.5 h-1.5 rounded-full",
+                <div className={cn(
+                  "mt-1 w-1.5 h-1.5 rounded-full",
+                  isFutureDay ? "invisible" : cn(
                     isSelected && status !== 'empty' ? "bg-white" : statusStyles[status],
                     status === 'empty' && "bg-transparent"
-                  )} />
-                )}
+                  )
+                )} />
               </button>
             );
           })}
