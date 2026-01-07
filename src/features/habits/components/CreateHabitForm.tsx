@@ -269,8 +269,8 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
         />
 
         <div
-          className="fixed left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border/40 z-40 safe-area-bottom"
-          style={{ bottom: 'calc(3rem + env(safe-area-inset-bottom))' }}
+          className="fixed left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border/40 z-40"
+          style={{ bottom: 'calc(4.5rem + 0.5rem + env(safe-area-inset-bottom))' }}
         >
            <div className="max-w-md mx-auto w-full">
             <Button
