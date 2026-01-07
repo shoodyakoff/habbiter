@@ -169,6 +169,27 @@ export default function LoginPage() {
   }, [supabaseUrl, router, supabaseAnonKey]);
 
   const [pollingToken, setPollingToken] = useState<string | null>(null);
+  const [showMobileFallback, setShowMobileFallback] = useState(false);
+  const [botLink, setBotLink] = useState<string>('');
+
+  // Detect if we're in Safari or Telegram in-app browser
+  const isInAppBrowser = () => {
+      if (typeof window === 'undefined') return false;
+      const ua = navigator.userAgent || navigator.vendor;
+
+      // Check for Telegram in-app browser
+      const isTelegramBrowser = ua.includes('Telegram');
+
+      // Check for Safari (but not Chrome on iOS which also includes Safari in UA)
+      const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua) && !/CriOS/.test(ua);
+
+      // Check for iOS in general (includes Safari, Chrome on iOS, etc)
+      const isIOS = /iPhone|iPad|iPod/.test(ua);
+
+      logger.info('[LoginPage] Browser detection', { isTelegramBrowser, isSafari, isIOS, ua: ua.substring(0, 50) });
+
+      return isTelegramBrowser || isSafari || isIOS;
+  };
 
   const startDeepLinkAuth = async () => {
       if (configError) {
@@ -177,6 +198,23 @@ export default function LoginPage() {
       }
 
       setIsDevLoginLoading(true);
+
+      // Check browser type first
+      const inAppBrowser = isInAppBrowser();
+
+      // For regular browsers: open window IMMEDIATELY (before async fetch)
+      // This prevents popup blockers since it's directly from user click
+      let newWindow: Window | null = null;
+      if (!inAppBrowser) {
+          logger.info('[LoginPage] Regular browser, pre-opening window');
+          newWindow = window.open('about:blank', '_blank');
+          if (!newWindow) {
+              logger.warn('[LoginPage] Popup blocked even before fetch');
+              setShowMobileFallback(true);
+              // Continue anyway to show fallback UI
+          }
+      }
+
       try {
           if (!supabaseAnonKey) throw new Error('Supabase Anon Key is missing');
           if (!supabaseAnonKey.startsWith('eyJ')) throw new Error('Invalid Supabase Anon Key (must be JWT)');
@@ -184,35 +222,78 @@ export default function LoginPage() {
           logger.info('Starting Deep Link Auth');
           const response = await fetch(`${supabaseUrl}/functions/v1/generate-auth-token`, {
               method: 'POST',
-              headers: { 
+              headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${supabaseAnonKey}`,
                   'apikey': supabaseAnonKey,
               },
               body: JSON.stringify({ action: 'generate' }),
           });
-          
+
           if (!response.ok) {
               const text = await response.text();
+              if (newWindow) newWindow.close();
               throw new Error(`Server error ${response.status}: ${text}`);
           }
 
           const data = await response.json();
-          if (!data.token) throw new Error('Failed to generate token');
-          
+          if (!data.token) {
+              if (newWindow) newWindow.close();
+              throw new Error('Failed to generate token');
+          }
+
           setPollingToken(data.token);
-          
-          const botLink = `https://t.me/${botUsername}?start=auth_${data.token}`;
-          
-          // Open in new tab
-          window.open(botLink, '_blank');
+          localStorage.setItem('pending_auth_token', data.token);
+
+          const generatedLink = `https://t.me/${botUsername}?start=auth_${data.token}`;
+          setBotLink(generatedLink);
+
+          // Handle link opening based on browser
+          if (inAppBrowser) {
+              logger.info('[LoginPage] In-app browser detected, showing fallback UI');
+              setShowMobileFallback(true);
+              setIsDevLoginLoading(false);
+
+              // Try to redirect in same window
+              try {
+                  window.location.href = generatedLink;
+              } catch (e) {
+                  logger.warn('[LoginPage] Failed to open link automatically', e);
+              }
+          } else {
+              // Update the pre-opened window with actual URL
+              if (newWindow && !newWindow.closed) {
+                  logger.info('[LoginPage] Updating pre-opened window with bot link');
+                  newWindow.location.href = generatedLink;
+              } else {
+                  // Fallback if window was blocked or closed
+                  logger.warn('[LoginPage] Window unavailable, showing fallback');
+                  setShowMobileFallback(true);
+              }
+              setIsDevLoginLoading(false);
+          }
       } catch (e: unknown) {
           const errorMessage = e instanceof Error ? e.message : 'Unknown error';
           logger.error('Error starting auth', errorMessage);
           alert('Error starting auth: ' + errorMessage);
+          if (newWindow) newWindow.close();
           setIsDevLoginLoading(false);
       }
   };
+
+  const copyBotLink = () => {
+      navigator.clipboard.writeText(botLink);
+      alert('Ссылка скопирована! Откройте Telegram и вставьте ссылку в любой чат');
+  };
+
+  // Restore pending token from localStorage on mount
+  useEffect(() => {
+      const savedToken = localStorage.getItem('pending_auth_token');
+      if (savedToken && !pollingToken) {
+          logger.info('[LoginPage] Restored pending token from localStorage');
+          setPollingToken(savedToken);
+      }
+  }, [pollingToken]);
 
   useEffect(() => {
       if (!pollingToken) return;
@@ -234,6 +315,7 @@ export default function LoginPage() {
               
               if (data.status === 'success' && data.session) {
                   clearInterval(interval);
+                  localStorage.removeItem('pending_auth_token');
                   await supabase.auth.setSession(data.session);
                   router.push('/');
               }
@@ -451,16 +533,49 @@ export default function LoginPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-primary mb-3" />
                     <p className="text-sm font-medium">Вход через Telegram...</p>
                  </div>
+            ) : showMobileFallback && botLink ? (
+                <div className="space-y-4">
+                    <div className="bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50 p-4 space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                            <span>Ожидание авторизации...</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            Если Telegram не открылся автоматически:
+                        </p>
+                        <div className="space-y-2">
+                            <Button
+                                variant="outline"
+                                className="w-full text-sm"
+                                onClick={copyBotLink}
+                            >
+                                📋 Скопировать ссылку
+                            </Button>
+                            <p className="text-xs text-center text-muted-foreground">
+                                или откройте вручную:
+                            </p>
+                            <a
+                                href={botLink}
+                                className="block w-full text-xs text-center text-primary hover:underline break-all px-2"
+                            >
+                                {botLink}
+                            </a>
+                        </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                        После авторизации в боте вернитесь на эту страницу
+                    </p>
+                </div>
             ) : (
                 <div className="space-y-4">
-                    <Button 
+                    <Button
                         className="w-full h-14 text-lg bg-[#0F52BA] hover:bg-[#0F52BA]/90 text-white rounded-2xl shadow-lg shadow-[#0F52BA]/20 transition-all active:scale-95"
                         onClick={startDeepLinkAuth}
                         disabled={isDevLoginLoading || !!pollingToken}
                     >
                         {pollingToken ? (
                             <div className="flex items-center gap-2">
-                                <Loader2 className="h-5 w-5 animate-spin" /> 
+                                <Loader2 className="h-5 w-5 animate-spin" />
                                 <span>Ожидание...</span>
                             </div>
                         ) : (
@@ -470,8 +585,8 @@ export default function LoginPage() {
                             </div>
                         )}
                     </Button>
-                    
-                    {pollingToken && (
+
+                    {pollingToken && !showMobileFallback && (
                         <p className="text-xs text-muted-foreground animate-pulse">
                             Перейдите в Telegram бот для подтверждения
                         </p>

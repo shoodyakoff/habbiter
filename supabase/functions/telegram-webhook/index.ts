@@ -54,7 +54,7 @@ serve(async (req: Request) => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             chat_id: chatId,
-                            text: `❌ Вы не подписаны на канал.\n\nДля авторизации необходимо подписаться: @${channelName}\n\nПосле подписки отправьте /start еще раз (или перейдите по ссылке с сайта).`,
+                            text: `❌ Вы не подписаны на канал.\n\nДля авторизации необходимо подписаться: @${channelName}\n\nПосле подписки отправьте /start еще раз.`,
                             reply_markup: {
                                 inline_keyboard: [[
                                     { text: 'Подписаться на канал', url: channelLink }
