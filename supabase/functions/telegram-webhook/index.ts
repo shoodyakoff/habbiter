@@ -73,10 +73,12 @@ serve(async (req: Request) => {
         }
         // Handle plain /start command (user typed /start after subscribing)
         else if (text === '/start') {
+            console.log(`Plain /start received from user ${userId}`)
             const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
             // Find the latest pending token for this telegram user
-            const { data: pendingToken } = await supabase
+            console.log(`Looking for pending token with telegram_id: ${userId}`)
+            const { data: pendingToken, error: tokenError } = await supabase
                 .from('auth_tokens')
                 .select('*')
                 .eq('telegram_id', userId)
@@ -84,6 +86,8 @@ serve(async (req: Request) => {
                 .order('created_at', { ascending: false })
                 .limit(1)
                 .single()
+
+            console.log(`Token lookup result: ${pendingToken ? 'found' : 'not found'}, error: ${tokenError?.message || 'none'}`)
 
             if (pendingToken) {
                 // Token found - check subscription and proceed
