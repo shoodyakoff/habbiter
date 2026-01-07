@@ -376,9 +376,9 @@ export default function LoginPage() {
         {/* Hero Section */}
         <motion.div variants={itemVariants} className="flex-none flex flex-row items-center justify-center gap-4">
             <div className="relative flex items-center justify-center">
-                <Dna size={40} weight="fill" className="text-black" />
+                <Dna size={40} weight="fill" className="text-primary" />
             </div>
-            <h1 
+            <h1
                 onClick={handleLogoClick}
                 className="text-4xl font-bold tracking-tight"
             >

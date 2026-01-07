@@ -113,7 +113,7 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-8 pb-32", className)}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-8 pb-40", className)}>
         
         {/* Name Input */}
         <FormField
@@ -268,11 +268,14 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
           )}
         />
 
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border/40 z-[100] safe-area-bottom">
+        <div
+          className="fixed left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border/40 z-40 safe-area-bottom"
+          style={{ bottom: 'calc(3rem + env(safe-area-inset-bottom))' }}
+        >
            <div className="max-w-md mx-auto w-full">
-            <Button 
-                type="submit" 
-                size="lg" 
+            <Button
+                type="submit"
+                size="lg"
                 className="w-full text-base font-semibold h-12 rounded-xl shadow-lg shadow-primary/20"
                 disabled={isSubmitting}
             >

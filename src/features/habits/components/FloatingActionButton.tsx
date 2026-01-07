@@ -14,7 +14,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ clas
   const router = useRouter();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex justify-center pb-24">
+    <div className="fixed bottom-0 left-0 right-0 z-[60] pointer-events-none flex justify-center pb-24">
       <div className="w-full max-w-md relative px-4">
         <motion.button
           onClick={() => router.push('/habits/new')}

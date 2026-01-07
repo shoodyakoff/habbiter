@@ -93,7 +93,7 @@ export const HabitDetailDialog: React.FC<HabitDetailDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md max-h-[calc(100%-10px)] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <div className="flex justify-between items-start">
             <DialogTitle className="text-xl flex items-center gap-2">
@@ -106,17 +106,17 @@ export const HabitDetailDialog: React.FC<HabitDetailDialogProps> = ({
           </p>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="flex-1 overflow-y-auto py-4 space-y-4">
             {/* Tracking Inputs */}
             {hasTrackingParams && (
                 <>
                     {habit.trackNotes && (
                         <div className="space-y-2">
                             <Label>Комментарий</Label>
-                            <Textarea 
-                                placeholder="Как все прошло?" 
-                                value={note} 
-                                onChange={(e) => setNote(e.target.value)} 
+                            <Textarea
+                                placeholder="Как все прошло?"
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
                             />
                         </div>
                     )}
@@ -125,44 +125,44 @@ export const HabitDetailDialog: React.FC<HabitDetailDialogProps> = ({
                         {habit.trackWeight && (
                             <div className="space-y-2">
                                 <Label>Вес (г)</Label>
-                                <Input 
-                                    type="number" 
-                                    placeholder="0" 
-                                    value={weight} 
-                                    onChange={(e) => setWeight(e.target.value)} 
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={weight}
+                                    onChange={(e) => setWeight(e.target.value)}
                                 />
                             </div>
                         )}
                         {habit.trackVolume && (
                             <div className="space-y-2">
                                 <Label>Объем (мл)</Label>
-                                <Input 
-                                    type="number" 
-                                    placeholder="0" 
-                                    value={volume} 
-                                    onChange={(e) => setVolume(e.target.value)} 
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={volume}
+                                    onChange={(e) => setVolume(e.target.value)}
                                 />
                             </div>
                         )}
                         {habit.trackCount && (
                             <div className="space-y-2">
                                 <Label>Количество (шт)</Label>
-                                <Input 
-                                    type="number" 
-                                    placeholder="0" 
-                                    value={count} 
-                                    onChange={(e) => setCount(e.target.value)} 
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={count}
+                                    onChange={(e) => setCount(e.target.value)}
                                 />
                             </div>
                         )}
                         {habit.trackDuration && (
                             <div className="space-y-2">
                                 <Label>Длительность (мин)</Label>
-                                <Input 
-                                    type="number" 
-                                    placeholder="0" 
-                                    value={duration} 
-                                    onChange={(e) => setDuration(e.target.value)} 
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={duration}
+                                    onChange={(e) => setDuration(e.target.value)}
                                 />
                             </div>
                         )}
@@ -172,7 +172,7 @@ export const HabitDetailDialog: React.FC<HabitDetailDialogProps> = ({
         </div>
 
         {hasTrackingParams && (
-            <DialogFooter>
+            <DialogFooter className="pt-4 border-t">
               <Button onClick={handleSave} className="w-full">
                 Сохранить
               </Button>
