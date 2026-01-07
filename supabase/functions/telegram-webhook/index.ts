@@ -192,8 +192,20 @@ async function authorizeUser(supabase: any, tokenData: any, userId: number, mess
             )
     }
     
-    // Send success message
-    await sendMessage(chatId, botToken, "✅ Вы успешно авторизовались! Можете возвращаться в приложение.")
+    // Send success message with link
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: chatId,
+            text: "✅ Вы успешно авторизовались! Можете возвращаться в Habbiter.",
+            reply_markup: {
+                inline_keyboard: [[
+                    { text: '🚀 Открыть Habbiter', url: 'https://shoodyakoff.github.io/habbiter/' }
+                ]]
+            }
+        })
+    })
 }
 
 async function sendMessage(chatId: number, token: string, text: string) {
