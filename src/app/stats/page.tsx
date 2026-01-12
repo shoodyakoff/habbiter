@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { 
-  format, 
-  startOfWeek, 
-  endOfWeek, 
-  eachDayOfInterval, 
-  addWeeks, 
-  subWeeks, 
-  isFuture, 
-  isToday, 
-  isSameDay 
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  addWeeks,
+  subWeeks,
+  isFuture,
+  isToday,
+  isSameDay,
+  getISODay
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { CaretLeft, CaretRight, ChartBar, Info } from '@phosphor-icons/react';
@@ -22,6 +23,7 @@ import { useHabitsQuery, useWeekRecordsQuery } from '@/features/habits/api/useHa
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptic';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { isHabitScheduledOnDay } from '@/features/habits/utils/schedule';
 
 export default function StatsPage() {
   // 1. State: Selected Date (defaults to today)
@@ -195,12 +197,23 @@ export default function StatsPage() {
                         {/* Days Cells */}
                         {weekDays.map((day) => {
                           const dateStr = format(day, 'yyyy-MM-dd');
-                          
-                          // Logic:
+                          const dayOfWeek = getISODay(day); // 1=Пн, 7=Вс (ISO-8601)
+
+                          // Проверяем, была ли привычка запланирована на этот день
+                          const wasScheduled = isHabitScheduledOnDay(
+                            habit.frequency,
+                            habit.repeatDays,
+                            dayOfWeek
+                          );
+
+                          // Если не запланирована - пустая клетка
+                          if (!wasScheduled) return <div key={dateStr} />;
+
+                          // Logic для запланированных дней:
                           // 1. Future -> Empty
                           if (isFuture(day) && !isToday(day)) return <div key={dateStr} />;
-                          
-                          // 2. Today -> Empty (give chance)
+
+                          // 2. Today -> Small dot (give chance)
                           if (isToday(day)) return <div key={dateStr} className="flex justify-center"><div className="size-1 rounded-full bg-muted" /></div>;
 
                           // 3. Past
@@ -210,13 +223,13 @@ export default function StatsPage() {
                           // Success -> Empty
                           if (isCompleted) return <div key={dateStr} />;
 
-                          // Failure -> Dot
+                          // Failure -> Red dot (привычка была запланирована, но не выполнена)
                           return (
                             <div key={dateStr} className="flex items-center justify-center">
-                              <motion.div 
+                              <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="size-2 rounded-full bg-destructive" 
+                                className="size-2 rounded-full bg-destructive"
                               />
                             </div>
                           );

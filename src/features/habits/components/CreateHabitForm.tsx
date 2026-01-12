@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { Check } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { WeekDaySelector } from './WeekDaySelector';
 
 const createHabitSchema = z.object({
   name: z.string().min(1, 'Название обязательно').max(100),
@@ -31,12 +32,25 @@ const createHabitSchema = z.object({
   color: HabitColorSchema.optional(),
   icon: z.string().optional(),
 
+  // Schedule
+  frequency: z.enum(['daily', 'specific_days']).default('daily'),
+  repeatDays: z.array(z.number()).optional(),
+
   // Tracking
   trackNotes: z.boolean().default(false),
   trackWeight: z.boolean().default(false),
   trackVolume: z.boolean().default(false),
   trackCount: z.boolean().default(false),
   trackDuration: z.boolean().default(false),
+}).refine((data) => {
+  // Если выбран specific_days, должен быть хотя бы один день
+  if (data.frequency === 'specific_days') {
+    return data.repeatDays && data.repeatDays.length > 0;
+  }
+  return true;
+}, {
+  message: 'Выберите хотя бы один день недели',
+  path: ['repeatDays'],
 });
 
 type FormValues = z.infer<typeof createHabitSchema>;
@@ -59,6 +73,8 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
       description: initialValues?.description || '',
       color: initialValues?.color || 'sapphire',
       icon: initialValues?.icon || 'target',
+      frequency: initialValues?.frequency || 'daily',
+      repeatDays: initialValues?.repeatDays || [],
       trackNotes: initialValues?.trackNotes || false,
       trackWeight: initialValues?.trackWeight || false,
       trackVolume: initialValues?.trackVolume || false,
@@ -76,6 +92,8 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
                 description: data.description,
                 color: data.color,
                 icon: data.icon,
+                frequency: data.frequency,
+                repeatDays: data.frequency === 'specific_days' ? data.repeatDays : undefined,
                 trackNotes: data.trackNotes,
                 trackWeight: data.trackWeight,
                 trackVolume: data.trackVolume,
@@ -88,8 +106,8 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
                 description: data.description,
                 color: data.color,
                 icon: data.icon,
-                frequency: 'daily',
-                repeatDays: [1, 2, 3, 4, 5, 6, 7],
+                frequency: data.frequency,
+                repeatDays: data.frequency === 'specific_days' ? data.repeatDays : undefined,
                 trackNotes: data.trackNotes,
                 trackWeight: data.trackWeight,
                 trackVolume: data.trackVolume,
@@ -177,9 +195,9 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
                   <p className="text-xs text-muted-foreground">Не обязательно</p>
               </div>
               <FormControl>
-                <Textarea 
-                  placeholder="10 минут утром..." 
-                  {...field} 
+                <Textarea
+                  placeholder="10 минут утром..."
+                  {...field}
                   className="min-h-[100px] bg-white dark:bg-card border-border/40 focus:border-primary/50 resize-none transition-colors shadow-sm"
                 />
               </FormControl>
@@ -187,6 +205,71 @@ export const CreateHabitForm = ({ onSuccess, initialValues, habitId, className }
             </FormItem>
           )}
         />
+
+        {/* Frequency Selection */}
+        <FormField
+          control={form.control}
+          name="frequency"
+          render={({ field }) => (
+            <FormItem className="space-y-4 pt-2">
+              <FormLabel className="text-base font-semibold">Частота</FormLabel>
+              <FormControl>
+                <div className="grid grid-cols-2 gap-3">
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.97 }}
+                    className={cn(
+                      "px-4 py-3 rounded-xl transition-all font-medium text-sm",
+                      field.value === 'daily'
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "bg-white dark:bg-card text-muted-foreground hover:bg-muted border border-border/40 shadow-sm"
+                    )}
+                    onClick={() => field.onChange('daily')}
+                  >
+                    Каждый день
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.97 }}
+                    className={cn(
+                      "px-4 py-3 rounded-xl transition-all font-medium text-sm",
+                      field.value === 'specific_days'
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "bg-white dark:bg-card text-muted-foreground hover:bg-muted border border-border/40 shadow-sm"
+                    )}
+                    onClick={() => field.onChange('specific_days')}
+                  >
+                    По дням недели
+                  </motion.button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Week Day Selector (shown only when specific_days is selected) */}
+        {form.watch('frequency') === 'specific_days' && (
+          <FormField
+            control={form.control}
+            name="repeatDays"
+            render={({ field }) => (
+              <FormItem className="space-y-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base font-semibold">Дни недели</FormLabel>
+                  <p className="text-xs text-muted-foreground">Выберите дни для выполнения привычки</p>
+                </div>
+                <FormControl>
+                  <WeekDaySelector
+                    value={field.value || []}
+                    onChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* Tracking Options */}
         <div className="space-y-4 pt-2">

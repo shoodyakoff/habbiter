@@ -10,8 +10,9 @@ import { EmptyState } from '@/features/habits/components/EmptyState';
 import { HabitDetailDialog } from '@/features/habits/components/HabitDetailDialog';
 import { useHabitsQuery, useHabitRecordsQuery, useHabitMutations, useWeekRecordsQuery } from '@/features/habits/api/useHabits';
 import { Habit } from '@/features/habits/types/schema';
-import { format } from 'date-fns';
+import { format, getISODay } from 'date-fns';
 import { getCardWidth } from '@/lib/layout';
+import { isHabitScheduledOnDay } from '@/features/habits/utils/schedule';
 
 function HomeContent() {
   const router = useRouter();
@@ -23,9 +24,24 @@ function HomeContent() {
   const { data: records = [] } = useHabitRecordsQuery(selectedDateStr);
   const { toggleHabit, archiveHabit } = useHabitMutations();
 
-  const activeHabits = habits.filter(h => h.status === 'active');
+  // Фильтруем активные привычки по расписанию на выбранную дату
+  const activeHabits = useMemo(() => {
+    const selectedDate = new Date(selectedDateStr);
+    const dayOfWeek = getISODay(selectedDate); // 1=Пн, 7=Вс (ISO-8601)
 
-  const completedCount = activeHabits.filter(h => 
+    return habits
+      .filter(h => h.status === 'active')
+      .filter(h => {
+        // Проверяем, должна ли привычка быть запланирована на этот день
+        return isHabitScheduledOnDay(
+          h.frequency,
+          h.repeatDays,
+          dayOfWeek
+        );
+      });
+  }, [habits, selectedDateStr]);
+
+  const completedCount = activeHabits.filter(h =>
     records.some(r => r.habitId === h.id && r.completed)
   ).length;
 
@@ -55,20 +71,32 @@ function HomeContent() {
     const map: Record<string, 'complete' | 'partial' | 'low' | 'empty' | 'failed'> = {};
     const today = format(new Date(), 'yyyy-MM-dd');
 
-    if (activeHabits.length === 0) return map;
+    const allActiveHabits = habits.filter(h => h.status === 'active');
+
+    if (allActiveHabits.length === 0) return map;
 
     weekDates.forEach(date => {
+      const dateObj = new Date(date);
+      const dayOfWeek = getISODay(dateObj);
+
+      // Фильтруем привычки, запланированные на этот день
+      const scheduledHabits = allActiveHabits.filter(h =>
+        isHabitScheduledOnDay(h.frequency, h.repeatDays, dayOfWeek)
+      );
+
       const dayRecords = weekRecords.filter(r => r.date === date && r.completed);
-      const dayCompletedCount = dayRecords.filter(r => 
-        activeHabits.some(h => h.id === r.habitId)
+      const dayCompletedCount = dayRecords.filter(r =>
+        scheduledHabits.some(h => h.id === r.habitId)
       ).length;
 
-      const total = activeHabits.length;
+      const total = scheduledHabits.length;
       const percentage = total > 0 ? (dayCompletedCount / total) : 0;
-      
+
       const isPast = date < today;
 
-      if (percentage === 1) {
+      if (total === 0) {
+        map[date] = 'empty'; // Нет запланированных привычек на этот день
+      } else if (percentage === 1) {
         map[date] = 'complete';
       } else if (percentage >= 0.5) {
         map[date] = 'partial';
@@ -81,7 +109,7 @@ function HomeContent() {
       }
     });
     return map;
-  }, [weekDates, weekRecords, activeHabits]);
+  }, [weekDates, weekRecords, habits]);
 
   if (isLoading) {
     return <div className="p-4 text-center">Loading...</div>; // TODO: Skeleton

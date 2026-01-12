@@ -47,13 +47,23 @@ export const HabitRecordSchema = z.object({
   habitId: z.string().uuid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
   completed: z.boolean(),
-  
+
   // Tracking values
   note: z.string().optional(),
   valueWeight: z.number().int().optional(),
   valueVolume: z.number().int().optional(),
   valueCount: z.number().int().optional(),
   valueDuration: z.number().int().optional(),
+});
+
+export const HabitScheduleHistorySchema = z.object({
+  id: z.string().uuid(),
+  habitId: z.string().uuid(),
+  frequency: z.enum(['daily', 'specific_days', 'custom']),
+  repeatDays: z.array(z.number()).optional(),
+  effectiveFrom: z.string().datetime(),
+  effectiveUntil: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
 });
 
 export const HabitListResponseSchema = z.object({
@@ -64,3 +74,4 @@ export const HabitListResponseSchema = z.object({
 export type Habit = z.infer<typeof HabitSchema>;
 export type HabitRecord = z.infer<typeof HabitRecordSchema>;
 export type HabitStatus = z.infer<typeof HabitStatusSchema>;
+export type HabitScheduleHistory = z.infer<typeof HabitScheduleHistorySchema>;
