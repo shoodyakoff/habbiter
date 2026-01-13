@@ -52,7 +52,10 @@ function EditHabitContent() {
 
       <CreateHabitForm
         habitId={habitId}
-        initialValues={habit}
+        initialValues={{
+          ...habit,
+          frequency: habit.frequency === 'custom' ? 'daily' : habit.frequency
+        }}
         onSuccess={() => router.push('/my-habits')}
       />
     </div>
