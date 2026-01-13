@@ -54,6 +54,7 @@ function EditHabitContent() {
         habitId={habitId}
         initialValues={{
           ...habit,
+          // Handle 'custom' frequency which is not supported in the form yet
           frequency: habit.frequency === 'custom' ? 'daily' : habit.frequency
         }}
         onSuccess={() => router.push('/my-habits')}
