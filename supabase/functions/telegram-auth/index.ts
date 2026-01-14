@@ -50,25 +50,35 @@ serve(async (req: Request) => {
     const email = `${data.id}@telegram.user`
     const password = TELEGRAM_BOT_TOKEN 
     
-    // Try to create auth user (ignore if exists)
-    // We use admin.createUser to bypass email confirmation if possible or just standard flow
-    const { data: createdUser } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { telegram_id: data.id }
-    })
-    
-    let userId = createdUser?.user?.id
+    // 1. Search for user in public.users via telegram_id
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('telegram_id', data.id)
+      .single()
+
+    let userId = existingUser?.id
 
     if (!userId) {
-        // User likely exists, let's sign in to get ID
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        // 2. Create user if not found
+        const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
             email,
-            password
+            password,
+            email_confirm: true,
+            user_metadata: { telegram_id: data.id }
         })
-        if (signInError) throw signInError
-        userId = signInData.user.id
+
+        if (createError) {
+             if (createError.message?.includes('already exists')) {
+                // Fallback: User exists in Auth but not in public table (sync issue)
+                const { data: signInData } = await supabase.auth.signInWithPassword({ email, password })
+                userId = signInData?.user?.id
+            } else {
+                throw createError
+            }
+        } else {
+            userId = createdUser.user.id
+        }
     }
 
     // Upsert public user data linked to Auth ID
@@ -92,10 +102,13 @@ serve(async (req: Request) => {
         throw userError
     }
 
-    // Update JWT metadata with subscription status
-    await supabase.auth.admin.updateUserById(userId, {
-        app_metadata: { is_subscribed: isSubscribed }
-    })
+    // Update JWT metadata ONLY if changed
+    const { data: { user: currentUser } } = await supabase.auth.admin.getUserById(userId)
+    if (currentUser?.app_metadata?.is_subscribed !== isSubscribed) {
+        await supabase.auth.admin.updateUserById(userId, {
+            app_metadata: { is_subscribed: isSubscribed }
+        })
+    }
 
     // 5. Create Session
     const { data: sessionData, error: sessionError } = await supabase.auth.signInWithPassword({

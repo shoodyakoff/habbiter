@@ -71,6 +71,7 @@
 - Работа внутри Telegram Webview (ограничения на куки, специфичное поведение iOS/Android).
 - Supabase Edge Functions имеют ограничения по времени выполнения (CPU limit).
 - Валидация данных через Zod на клиенте и Edge Functions.
+- **Деплой Edge Functions:** Функции, обрабатывающие авторизацию (`telegram-auth`, `telegram-auth-miniapp`) или вебхуки (`telegram-webhook`), должны деплоиться с флагом `--no-verify-jwt`, так как они выполняют собственную валидацию (Telegram hash) или вызываются внешней системой без Supabase токена.
 
 ---
 

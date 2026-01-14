@@ -160,18 +160,38 @@ async function authorizeUser(supabase: any, tokenData: any, userId: number, mess
     const email = `${userId}@telegram.user`
     const password = botToken
     
-    // Try to create auth user
-    const { data: createdUser } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { telegram_id: userId }
-    })
-    
-    let authUserId = createdUser?.user?.id
+    // 1. Search for user in public.users
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('telegram_id', userId)
+      .single()
+
+    let authUserId = existingUser?.id
+
     if (!authUserId) {
-        const { data: signInData } = await supabase.auth.signInWithPassword({ email, password })
-        authUserId = signInData?.user?.id
+        // 2. Create user if not found
+        const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { telegram_id: userId }
+        })
+
+        if (createError) {
+             if (createError.message?.includes('already exists')) {
+                // Fallback: Use admin.listUsers to find ID without creating session
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { data: { users } } = await supabase.auth.admin.listUsers()
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const foundUser = users.find((u: any) => u.email === email)
+                authUserId = foundUser?.id
+            } else {
+                throw createError
+            }
+        } else {
+            authUserId = createdUser.user.id
+        }
     }
 
     if (authUserId) {
@@ -185,11 +205,14 @@ async function authorizeUser(supabase: any, tokenData: any, userId: number, mess
             last_login_at: new Date().toISOString()
             }, { onConflict: 'telegram_id' })
 
-            // Update app_metadata for JWT
-            await supabase.auth.admin.updateUserById(
-                authUserId,
-                { app_metadata: { is_subscribed: isSubscribed } }
-            )
+            // Update app_metadata for JWT ONLY if changed
+            const { data: { user: currentUser } } = await supabase.auth.admin.getUserById(authUserId)
+            if (currentUser?.app_metadata?.is_subscribed !== isSubscribed) {
+                await supabase.auth.admin.updateUserById(
+                    authUserId,
+                    { app_metadata: { is_subscribed: isSubscribed } }
+                )
+            }
     }
     
     // Send success message with link
